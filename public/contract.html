@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>عقد تصنيع</title>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -35,6 +37,10 @@
     .tbtn-back:hover   { background: rgba(255,255,255,0.2); }
     .tbtn-wa     { background: #25D366; color: white; }
     .tbtn-wa:hover     { background: #1da851; }
+    .tbtn-img    { background: #8e44ad; color: white; }
+    .tbtn-img:hover    { background: #6c3483; }
+    .tbtn-pdf    { background: #e74c3c; color: white; }
+    .tbtn-pdf:hover    { background: #c0392b; }
 
     /* ===== CONTRACT PAPER ===== */
     .page-wrap { padding: 30px; display: flex; justify-content: center; }
@@ -250,7 +256,9 @@
   <div class="toolbar-actions">
     <button class="tbtn tbtn-back" onclick="history.back()">← رجوع</button>
     <button class="tbtn tbtn-wa" id="wa-btn" style="display:none" onclick="sendWhatsApp()">💬 إرسال واتساب</button>
-    <button class="tbtn tbtn-print" onclick="window.print()">🖨️ طباعة / PDF</button>
+    <button class="tbtn tbtn-img" onclick="saveImage()">🖼️ حفظ صورة</button>
+    <button class="tbtn tbtn-pdf" onclick="savePDF()">📄 حفظ PDF</button>
+    <button class="tbtn tbtn-print" onclick="window.print()">🖨️ طباعة</button>
   </div>
 </div>
 
@@ -502,6 +510,62 @@
       `شكراً لثقتكم 🙏`
     );
     window.open(`https://wa.me/${num}?text=${msg}`, '_blank');
+  }
+
+  async function captureContract() {
+    const el = document.getElementById('contract-body');
+    return await html2canvas(el, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      scrollX: 0,
+      scrollY: -window.scrollY
+    });
+  }
+
+  async function saveImage() {
+    const btn = event.currentTarget;
+    const orig = btn.textContent;
+    btn.textContent = '⏳ جاري الحفظ...';
+    btn.disabled = true;
+    try {
+      const canvas = await captureContract();
+      const link = document.createElement('a');
+      const num = document.getElementById('tb-num').textContent.replace(/\s/g, '-');
+      link.download = `عقد-${num}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } finally {
+      btn.textContent = orig;
+      btn.disabled = false;
+    }
+  }
+
+  async function savePDF() {
+    const btn = event.currentTarget;
+    const orig = btn.textContent;
+    btn.textContent = '⏳ جاري الحفظ...';
+    btn.disabled = true;
+    try {
+      const canvas = await captureContract();
+      const imgData = canvas.toDataURL('image/png');
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pdfW = pdf.internal.pageSize.getWidth();
+      const pdfH = (canvas.height * pdfW) / canvas.width;
+      const pageH = pdf.internal.pageSize.getHeight();
+      let y = 0;
+      while (y < pdfH) {
+        if (y > 0) pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, -y, pdfW, pdfH);
+        y += pageH;
+      }
+      const num = document.getElementById('tb-num').textContent.replace(/\s/g, '-');
+      pdf.save(`عقد-${num}.pdf`);
+    } finally {
+      btn.textContent = orig;
+      btn.disabled = false;
+    }
   }
 
   loadContract();
