@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>عقد تصنيع</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    /* ===== TOOLBAR (hidden on print) ===== */
+    .toolbar {
+      background: #1a1a2e;
+      padding: 14px 30px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap;
+    }
+    .toolbar-title { color: white; font-weight: 700; font-size: 1rem; }
+    .toolbar-actions { display: flex; gap: 10px; }
+    .tbtn {
+      padding: 9px 22px; border-radius: 8px; border: none;
+      font-family: 'Cairo', sans-serif; font-size: 0.88rem; font-weight: 700;
+      cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 7px;
+    }
+    .tbtn-print  { background: #27ae60; color: white; }
+    .tbtn-print:hover  { background: #1e8449; }
+    .tbtn-back   { background: rgba(255,255,255,0.12); color: white; }
+    .tbtn-back:hover   { background: rgba(255,255,255,0.2); }
+    .tbtn-wa     { background: #25D366; color: white; }
+    .tbtn-wa:hover     { background: #1da851; }
+
+    /* ===== CONTRACT PAPER ===== */
+    .page-wrap { padding: 30px; display: flex; justify-content: center; }
+
+    .contract {
+      background: white;
+      width: 210mm;
+      min-height: 297mm;
+      padding: 18mm 20mm;
+      box-shadow: 0 4px 30px rgba(0,0,0,0.12);
+      border-radius: 4px;
+      position: relative;
+    }
+
+    /* Watermark */
+    .contract::before {
+      content: 'عقد تصنيع';
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%) rotate(-35deg);
+      font-size: 7rem; font-weight: 900;
+      color: rgba(44,62,80,0.04);
+      white-space: nowrap; pointer-events: none;
+      z-index: 0;
+    }
+    .contract > * { position: relative; z-index: 1; }
+
+    /* ===== HEADER ===== */
+    .contract-header {
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 3px solid #2c3e50; padding-bottom: 16px; margin-bottom: 18px;
+    }
+    .factory-brand { display: flex; align-items: center; gap: 14px; }
+    .factory-logo  {
+      width: 70px; height: 70px; border-radius: 50%;
+      object-fit: cover; border: 3px solid #e74c3c;
+      display: none;
+    }
+    .factory-logo.show { display: block; }
+    .factory-logo-placeholder {
+      width: 70px; height: 70px; border-radius: 50%;
+      background: #2c3e50; color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; font-weight: 900;
+    }
+    .factory-info h1 { font-size: 1.35rem; font-weight: 900; color: #2c3e50; }
+    .factory-info p  { font-size: 0.78rem; color: #888; margin-top: 2px; }
+
+    .contract-title-box { text-align: center; }
+    .contract-title-box h2 {
+      font-size: 1.5rem; font-weight: 900;
+      color: #e74c3c; letter-spacing: 1px;
+    }
+    .contract-title-box .contract-num {
+      background: #2c3e50; color: white;
+      padding: 4px 16px; border-radius: 50px;
+      font-size: 0.82rem; font-weight: 700;
+      display: inline-block; margin-top: 6px;
+    }
+
+    /* ===== DATE ROW ===== */
+    .dates-row {
+      display: flex; justify-content: space-between;
+      background: #f8f9fa; border-radius: 8px;
+      padding: 10px 16px; margin-bottom: 18px;
+      font-size: 0.82rem; color: #555;
+    }
+    .dates-row span strong { color: #2c3e50; }
+
+    /* ===== PARTIES ===== */
+    .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
+    .party-box {
+      border: 1.5px solid #e0e0e0; border-radius: 10px; padding: 14px 16px;
+    }
+    .party-box.factory-box { border-color: #2c3e50; background: #f8fafd; }
+    .party-box.client-box  { border-color: #e74c3c; background: #fdf9f9; }
+    .party-label {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; margin-bottom: 10px; padding-bottom: 7px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .factory-box .party-label { color: #2c3e50; }
+    .client-box  .party-label { color: #e74c3c; }
+    .party-row { display: flex; gap: 8px; font-size: 0.82rem; margin-bottom: 5px; }
+    .party-row .lbl { color: #999; min-width: 55px; flex-shrink: 0; }
+    .party-row .val { font-weight: 700; color: #1a1a2e; }
+
+    /* ===== SECTION TITLE ===== */
+    .sec-title {
+      background: #2c3e50; color: white;
+      padding: 7px 16px; border-radius: 6px;
+      font-size: 0.88rem; font-weight: 700;
+      margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+    }
+
+    /* ===== ITEMS TABLE ===== */
+    .items-table {
+      width: 100%; border-collapse: collapse;
+      margin-bottom: 18px; font-size: 0.82rem;
+    }
+    .items-table th {
+      background: #2c3e50; color: white;
+      padding: 9px 10px; text-align: center; font-weight: 700;
+    }
+    .items-table th:first-child { border-radius: 0 6px 0 0; }
+    .items-table th:last-child  { border-radius: 6px 0 0 0; }
+    .items-table td {
+      padding: 9px 10px; border-bottom: 1px solid #f0f0f0;
+      text-align: center; color: #333;
+    }
+    .items-table tr:nth-child(even) td { background: #fafafa; }
+    .items-table .model-cell { text-align: right; font-weight: 700; color: #1a1a2e; }
+    .items-table .total-cell { font-weight: 900; color: #27ae60; }
+    .items-table tfoot td {
+      border-top: 2px solid #2c3e50; font-weight: 900;
+      background: #f8f9fa; font-size: 0.9rem;
+    }
+    .items-table .grand-total-val { color: #e74c3c; font-size: 1rem; }
+
+    /* ===== PAYMENT BOX ===== */
+    .payment-grid {
+      display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 12px; margin-bottom: 18px;
+    }
+    .pay-box {
+      border-radius: 10px; padding: 12px 14px; text-align: center;
+    }
+    .pay-box .pay-lbl { font-size: 0.75rem; color: #888; margin-bottom: 5px; }
+    .pay-box .pay-val { font-size: 1.1rem; font-weight: 900; }
+    .pay-box.total-box    { background: #eaf4fb; border: 1.5px solid #3498db; }
+    .pay-box.advance-box  { background: #eafaf1; border: 1.5px solid #27ae60; }
+    .pay-box.remain-box   { background: #fef9ec; border: 1.5px solid #f39c12; }
+    .pay-box.total-box   .pay-val { color: #2980b9; }
+    .pay-box.advance-box .pay-val { color: #1e8449; }
+    .pay-box.remain-box  .pay-val { color: #d68910; }
+
+    /* ===== TERMS ===== */
+    .terms-box {
+      border: 1px solid #e0e0e0; border-radius: 10px;
+      padding: 14px 16px; margin-bottom: 18px;
+      background: #fafafa; font-size: 0.8rem; color: #555; line-height: 2;
+    }
+    .terms-box ol { padding-right: 18px; }
+    .terms-box li { margin-bottom: 4px; }
+
+    /* ===== NOTES ===== */
+    .notes-box {
+      border-right: 4px solid #f39c12; padding: 10px 14px;
+      background: #fef9ec; border-radius: 0 8px 8px 0;
+      margin-bottom: 18px; font-size: 0.82rem; color: #555; line-height: 1.8;
+    }
+
+    /* ===== SIGNATURES ===== */
+    .signatures {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 30px; margin-top: 30px; padding-top: 20px;
+      border-top: 2px dashed #ccc;
+    }
+    .sig-box { text-align: center; }
+    .sig-label { font-size: 0.85rem; font-weight: 700; color: #555; margin-bottom: 55px; }
+    .sig-line  {
+      border-top: 1.5px solid #333; padding-top: 8px;
+      font-size: 0.8rem; color: #888;
+    }
+    .sig-name  { font-weight: 700; color: #2c3e50; font-size: 0.9rem; }
+
+    /* ===== STATUS BADGE ===== */
+    .status-badge {
+      display: inline-block; padding: 3px 12px; border-radius: 50px;
+      font-size: 0.75rem; font-weight: 700;
+    }
+
+    /* ===== PRINT ===== */
+    @media print {
+      body { background: white; }
+      .toolbar { display: none !important; }
+      .page-wrap { padding: 0; }
+      .contract {
+        box-shadow: none; border-radius: 0;
+        width: 100%; min-height: auto;
+        padding: 12mm 15mm;
+      }
+      @page { size: A4; margin: 0; }
+    }
+
+    /* Loading */
+    #loading-overlay {
+      position: fixed; inset: 0; background: #1a1a2e;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 999; transition: opacity 0.4s;
+    }
+    #loading-overlay.hide { opacity: 0; pointer-events: none; }
+    .spin {
+      width: 50px; height: 50px; border-radius: 50%;
+      border: 4px solid rgba(255,255,255,0.1);
+      border-top-color: #e74c3c;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .load-txt { color: white; margin-top: 14px; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+
+<div id="loading-overlay">
+  <div class="spin"></div>
+  <p class="load-txt">جاري تحميل العقد...</p>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar" id="toolbar">
+  <span class="toolbar-title">📄 عقد تصنيع — <span id="tb-num"></span></span>
+  <div class="toolbar-actions">
+    <button class="tbtn tbtn-back" onclick="history.back()">← رجوع</button>
+    <button class="tbtn tbtn-wa" id="wa-btn" style="display:none" onclick="sendWhatsApp()">💬 إرسال واتساب</button>
+    <button class="tbtn tbtn-print" onclick="window.print()">🖨️ طباعة / PDF</button>
+  </div>
+</div>
+
+<!-- Contract -->
+<div class="page-wrap">
+<div class="contract" id="contract-body">
+
+  <!-- Header -->
+  <div class="contract-header">
+    <div class="factory-brand">
+      <img id="factory-logo" class="factory-logo" src="" alt="logo">
+      <div id="logo-placeholder" class="factory-logo-placeholder">م</div>
+      <div class="factory-info">
+        <h1 id="factory-name">مصنع الملابس</h1>
+        <p id="factory-contact"></p>
+      </div>
+    </div>
+    <div class="contract-title-box">
+      <h2>عـقـد تـصـنـيـع</h2>
+      <div class="contract-num" id="contract-num">2024-001</div>
+    </div>
+  </div>
+
+  <!-- Dates -->
+  <div class="dates-row">
+    <span>📅 تاريخ العقد: <strong id="c-date">—</strong></span>
+    <span>🚚 موعد التسليم: <strong id="c-delivery">—</strong></span>
+    <span>الحالة: <strong id="c-status">—</strong></span>
+  </div>
+
+  <!-- Parties -->
+  <div class="parties">
+    <div class="party-box factory-box">
+      <div class="party-label">الطرف الأول — المصنع</div>
+      <div class="party-row"><span class="lbl">الاسم:</span><span class="val" id="p1-name">—</span></div>
+      <div class="party-row"><span class="lbl">الهاتف:</span><span class="val" id="p1-phone">—</span></div>
+      <div class="party-row"><span class="lbl">العنوان:</span><span class="val" id="p1-address">—</span></div>
+    </div>
+    <div class="party-box client-box">
+      <div class="party-label">الطرف الثاني — العميل</div>
+      <div class="party-row"><span class="lbl">الاسم:</span><span class="val" id="p2-name">—</span></div>
+      <div class="party-row"><span class="lbl">الهاتف:</span><span class="val" id="p2-phone">—</span></div>
+      <div class="party-row"><span class="lbl">العنوان:</span><span class="val" id="p2-address">—</span></div>
+    </div>
+  </div>
+
+  <!-- Items -->
+  <div class="sec-title">🧵 تفاصيل الطلب والموديلات</div>
+  <table class="items-table" id="items-table">
+    <thead>
+      <tr>
+        <th style="text-align:right;width:35%">الموديل</th>
+        <th>العدد</th>
+        <th style="text-align:right">الألوان</th>
+        <th>سعر الوحدة</th>
+        <th>الإجمالي</th>
+      </tr>
+    </thead>
+    <tbody id="items-body"></tbody>
+    <tfoot>
+      <tr>
+        <td colspan="4" style="text-align:left;padding:10px;">الإجمالي الكلي</td>
+        <td class="grand-total-val" id="grand-total">—</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <!-- Payment -->
+  <div class="sec-title">💰 تفاصيل الدفع</div>
+  <div class="payment-grid">
+    <div class="pay-box total-box">
+      <div class="pay-lbl">المبلغ الإجمالي</div>
+      <div class="pay-val" id="pay-total">0 ج.م</div>
+    </div>
+    <div class="pay-box advance-box">
+      <div class="pay-lbl">المقدم المدفوع</div>
+      <div class="pay-val" id="pay-advance">0 ج.م</div>
+    </div>
+    <div class="pay-box remain-box">
+      <div class="pay-lbl">المبلغ المتبقي عند التسليم</div>
+      <div class="pay-val" id="pay-remaining">0 ج.م</div>
+    </div>
+  </div>
+
+  <!-- Notes -->
+  <div id="notes-section" style="display:none">
+    <div class="sec-title">📝 ملاحظات وشروط خاصة</div>
+    <div class="notes-box" id="notes-content"></div>
+  </div>
+
+  <!-- Terms -->
+  <div class="sec-title">📜 الشروط والأحكام العامة</div>
+  <div class="terms-box">
+    <ol>
+      <li>يلتزم الطرف الأول (المصنع) بتسليم البضاعة في الموعد المحدد وبالمواصفات المتفق عليها.</li>
+      <li>يلتزم الطرف الثاني (العميل) بسداد المبلغ المتبقي كاملاً عند استلام البضاعة.</li>
+      <li>في حالة تأخر العميل عن استلام البضاعة أكثر من 7 أيام من الموعد، تُحتسب رسوم تخزين يومية.</li>
+      <li>لا يحق للعميل إلغاء الطلب بعد بدء التصنيع، ويُعدّ المقدم المدفوع غير قابل للاسترداد.</li>
+      <li>تعتبر المواصفات المثبتة في هذا العقد هي المرجع الوحيد في حالة أي نزاع.</li>
+      <li>يُحكّم هذا العقد وفقاً لأحكام القانون المعمول به في جمهورية مصر العربية.</li>
+    </ol>
+  </div>
+
+  <!-- Signatures -->
+  <div class="signatures">
+    <div class="sig-box">
+      <div class="sig-label">توقيع الطرف الأول (المصنع)</div>
+      <div class="sig-line"><div class="sig-name" id="sig-factory">—</div></div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-label">توقيع الطرف الثاني (العميل)</div>
+      <div class="sig-line"><div class="sig-name" id="sig-client">—</div></div>
+    </div>
+  </div>
+
+</div><!-- /contract -->
+</div><!-- /page-wrap -->
+
+<script>
+  const STATUS_MAP = {
+    'pending':     { label: '⏳ معلق',          color: '#f39c12' },
+    'in-progress': { label: '🔧 جاري التصنيع', color: '#3498db' },
+    'completed':   { label: '✅ مكتمل',          color: '#27ae60' },
+    'cancelled':   { label: '❌ ملغي',           color: '#e74c3c' }
+  };
+
+  function fmt(n) { return Number(n||0).toLocaleString('ar-EG') + ' ج.م'; }
+  function fmtDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' });
+  }
+  function setText(id, val) { const el = document.getElementById(id); if(el) el.textContent = val || '—'; }
+
+  async function loadContract() {
+    const id = location.pathname.split('/').pop();
+    try {
+      const [orderRes, settingsRes] = await Promise.all([
+        fetch(`/api/orders/${id}`),
+        fetch('/api/settings')
+      ]);
+      const order    = await orderRes.json();
+      const settings = await settingsRes.json();
+      render(order, settings);
+    } catch(e) {
+      document.getElementById('contract-body').innerHTML =
+        '<div style="text-align:center;padding:60px;color:#e74c3c;font-size:1.2rem;">⚠️ لم يتم العثور على العقد</div>';
+    } finally {
+      document.getElementById('loading-overlay').classList.add('hide');
+    }
+  }
+
+  function render(o, s) {
+    const factoryName = s.factoryName || 'مصنع الملابس';
+
+    // Toolbar
+    document.getElementById('tb-num').textContent = `عقد رقم ${o.contractNumber}`;
+    document.title = `عقد تصنيع ${o.contractNumber} — ${o.clientName}`;
+
+    // Logo / placeholder
+    if (s.logoUrl) {
+      const img = document.getElementById('factory-logo');
+      img.src = s.logoUrl; img.classList.add('show');
+      document.getElementById('logo-placeholder').style.display = 'none';
+    } else {
+      document.getElementById('logo-placeholder').textContent = factoryName[0];
+    }
+
+    // Factory header
+    setText('factory-name', factoryName);
+    const contact = [s.contactPhone, s.contactEmail].filter(Boolean).join(' | ');
+    setText('factory-contact', contact || s.contactAddress || '');
+
+    // Contract meta
+    setText('contract-num', `عقد رقم: ${o.contractNumber}`);
+    setText('c-date',     fmtDate(o.contractDate));
+    setText('c-delivery', fmtDate(o.deliveryDate));
+    const st = STATUS_MAP[o.status] || STATUS_MAP['pending'];
+    document.getElementById('c-status').innerHTML =
+      `<span style="color:${st.color};font-weight:900;">${st.label}</span>`;
+
+    // Party 1 — factory
+    setText('p1-name',    factoryName);
+    setText('p1-phone',   s.contactPhone || '—');
+    setText('p1-address', s.contactAddress || '—');
+
+    // Party 2 — client
+    setText('p2-name',    o.clientName);
+    setText('p2-phone',   o.clientPhone);
+    setText('p2-address', o.clientAddress || '—');
+
+    // Items table
+    const items = o.items || [];
+    let grandTotal = 0;
+    document.getElementById('items-body').innerHTML = items.length
+      ? items.map(i => {
+          const rowTotal = (Number(i.qty)||0) * (Number(i.unitPrice)||0);
+          grandTotal += rowTotal;
+          return `<tr>
+            <td class="model-cell">${i.model || '—'}</td>
+            <td>${Number(i.qty||0).toLocaleString('ar-EG')}</td>
+            <td style="text-align:right">${i.colors || '—'}</td>
+            <td>${fmt(i.unitPrice)}</td>
+            <td class="total-cell">${fmt(rowTotal)}</td>
+          </tr>`;
+        }).join('')
+      : '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:20px;">لا توجد موديلات مسجلة</td></tr>';
+    setText('grand-total', fmt(grandTotal));
+
+    // Payment
+    const total     = Number(o.total || grandTotal);
+    const advance   = Number(o.advance || 0);
+    const remaining = total - advance;
+    setText('pay-total',     fmt(total));
+    setText('pay-advance',   fmt(advance));
+    setText('pay-remaining', fmt(remaining));
+
+    // Notes
+    if (o.notes && o.notes.trim()) {
+      document.getElementById('notes-section').style.display = 'block';
+      setText('notes-content', o.notes);
+    }
+
+    // Signatures
+    setText('sig-factory', factoryName);
+    setText('sig-client',  o.clientName);
+
+    // WhatsApp button
+    if (s.contactWhatsapp) {
+      const waBtn = document.getElementById('wa-btn');
+      waBtn.style.display = 'flex';
+      waBtn._waNum = s.contactWhatsapp.replace(/\D/g,'');
+      waBtn._order = o;
+      waBtn._factory = factoryName;
+    }
+  }
+
+  function sendWhatsApp() {
+    const btn = document.getElementById('wa-btn');
+    const o   = btn._order;
+    const num = btn._waNum;
+    if (!num) return;
+    const url = `${location.origin}/contract/${o.id}`;
+    const msg = encodeURIComponent(
+      `السلام عليكم ${o.clientName}،\n\n` +
+      `يسعدنا مشاركتك عقد التصنيع رقم *${o.contractNumber}*\n` +
+      `📅 موعد التسليم: ${fmtDate(o.deliveryDate)}\n` +
+      `💰 إجمالي المبلغ: ${Number(o.total||0).toLocaleString('ar-EG')} ج.م\n\n` +
+      `يمكنك عرض العقد كاملاً وطباعته من الرابط التالي:\n${url}\n\n` +
+      `شكراً لثقتكم 🙏`
+    );
+    window.open(`https://wa.me/${num}?text=${msg}`, '_blank');
+  }
+
+  loadContract();
+</script>
+</body>
+</html>

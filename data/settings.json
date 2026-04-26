@@ -1,0 +1,56 @@
+{
+  "factoryName": "مصنع الملابس",
+  "welcomeMessage": "مرحباً بكم في مصنعنا",
+  "welcomeSubMessage": "نصنع الجودة ونرتقي بالأناقة",
+  "logoUrl": "",
+  "contactPhone": "",
+  "contactEmail": "",
+  "contactAddress": "",
+  "about": "نحن مصنع متخصص في صناعة الملابس بأعلى معايير الجودة",
+  "products": [
+    {
+      "id": 1,
+      "name": "قمصان رجالية",
+      "description": "قمصان بأقمشة فاخرة وخياطة محكمة",
+      "image": "",
+      "category": "رجالي"
+    },
+    {
+      "id": 2,
+      "name": "فساتين نسائية",
+      "description": "تصميمات عصرية تجمع بين الأناقة والراحة",
+      "image": "",
+      "category": "نسائي"
+    },
+    {
+      "id": 3,
+      "name": "ملابس أطفال",
+      "description": "ملابس ملونة وآمنة لأطفالنا الصغار",
+      "image": "",
+      "category": "أطفال"
+    }
+  ],
+  "services": [
+    {
+      "id": 1,
+      "title": "تصنيع بالجملة",
+      "icon": "🏭",
+      "desc": "إنتاج كميات كبيرة بأسعار تنافسية"
+    },
+    {
+      "id": 2,
+      "title": "تصميم مخصص",
+      "icon": "✂️",
+      "desc": "تصميم حسب طلب العميل وذوقه"
+    },
+    {
+      "id": 3,
+      "title": "توصيل سريع",
+      "icon": "🚚",
+      "desc": "نوصل لجميع أنحاء المملكة"
+    }
+  ],
+  "primaryColor": "#2c3e50",
+  "accentColor": "#e74c3c",
+  "heroBackground": "#1a1a2e"
+}

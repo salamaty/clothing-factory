@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مصنع الملابس</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --primary: #2c3e50;
+      --accent: #e74c3c;
+      --hero-bg: #1a1a2e;
+      --text-light: #ecf0f1;
+      --text-dark: #2c3e50;
+      --card-bg: #fff;
+      --section-bg: #f8f9fa;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: #f0f0f0;
+      color: var(--text-dark);
+      overflow-x: hidden;
+    }
+
+    /* ===== WELCOME SCREEN ===== */
+    #loading {
+      position: fixed; inset: 0;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 9999; overflow: hidden;
+      transition: opacity 0.8s ease, visibility 0.8s ease;
+    }
+    #loading.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+
+    /* Particles */
+    .w-particles { position: absolute; inset: 0; pointer-events: none; }
+    .w-particle {
+      position: absolute; border-radius: 50%; opacity: 0;
+      animation: wFloat linear infinite;
+    }
+    @keyframes wFloat {
+      0%   { transform: translateY(100vh) scale(0); opacity: 0; }
+      15%  { opacity: 0.6; }
+      85%  { opacity: 0.6; }
+      100% { transform: translateY(-120px) scale(1.5); opacity: 0; }
+    }
+
+    /* Rings */
+    .w-rings { position: absolute; }
+    .w-ring {
+      position: absolute; border-radius: 50%; border: 1px solid;
+      transform: translate(-50%,-50%);
+      animation: ringPulse ease-in-out infinite;
+    }
+    .w-ring:nth-child(1) { width:160px;height:160px; border-color:rgba(231,76,60,0.3); animation-duration:2.5s; animation-delay:0s; }
+    .w-ring:nth-child(2) { width:260px;height:260px; border-color:rgba(231,76,60,0.15); animation-duration:2.5s; animation-delay:0.4s; }
+    .w-ring:nth-child(3) { width:380px;height:380px; border-color:rgba(231,76,60,0.07); animation-duration:2.5s; animation-delay:0.8s; }
+    @keyframes ringPulse {
+      0%,100% { transform: translate(-50%,-50%) scale(1); opacity:1; }
+      50%      { transform: translate(-50%,-50%) scale(1.08); opacity:0.5; }
+    }
+
+    /* Logo circle */
+    .w-logo-wrap {
+      position: relative; z-index: 2; margin-bottom: 28px;
+      opacity: 0; animation: scaleIn 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.3s forwards;
+    }
+    @keyframes scaleIn {
+      from { opacity:0; transform: scale(0.3); }
+      to   { opacity:1; transform: scale(1); }
+    }
+    .w-logo-circle {
+      width: 110px; height: 110px; border-radius: 50%;
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 3.2rem;
+      box-shadow: 0 0 0 4px rgba(231,76,60,0.3),
+                  0 0 40px rgba(231,76,60,0.5),
+                  0 0 80px rgba(231,76,60,0.2);
+      animation: glowPulse 2s ease-in-out 1s infinite alternate;
+    }
+    .w-logo-img {
+      width: 110px; height: 110px; border-radius: 50%;
+      object-fit: cover; display: none;
+      box-shadow: 0 0 0 4px rgba(231,76,60,0.4),
+                  0 0 40px rgba(231,76,60,0.5);
+    }
+    .w-logo-img.show { display: block; }
+    @keyframes glowPulse {
+      from { box-shadow: 0 0 0 4px rgba(231,76,60,0.3), 0 0 30px rgba(231,76,60,0.4); }
+      to   { box-shadow: 0 0 0 8px rgba(231,76,60,0.15), 0 0 70px rgba(231,76,60,0.7), 0 0 120px rgba(231,76,60,0.3); }
+    }
+
+    /* Name */
+    .w-name {
+      position: relative; z-index: 2; color: white;
+      font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 900;
+      letter-spacing: 2px; text-align: center;
+      opacity: 0; animation: slideUp 0.6s ease 1s forwards;
+      text-shadow: 0 0 30px rgba(231,76,60,0.6);
+      min-height: 1.3em;
+    }
+    .w-name span { color: #e74c3c; }
+
+    /* Welcome text */
+    .w-welcome {
+      position: relative; z-index: 2;
+      color: rgba(255,255,255,0.7); font-size: 1rem;
+      letter-spacing: 4px; text-transform: uppercase;
+      margin-bottom: 8px;
+      opacity: 0; animation: slideUp 0.6s ease 0.7s forwards;
+    }
+
+    /* Divider line */
+    .w-line {
+      width: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, #e74c3c, transparent);
+      margin: 16px auto; border-radius: 2px;
+      animation: expandLine 0.8s ease 1.5s forwards;
+    }
+    @keyframes expandLine { to { width: 200px; } }
+
+    /* Subtitle */
+    .w-subtitle {
+      position: relative; z-index: 2;
+      color: rgba(255,255,255,0.5); font-size: 0.88rem;
+      text-align: center; letter-spacing: 1px;
+      opacity: 0; animation: slideUp 0.5s ease 1.6s forwards;
+    }
+
+    /* Progress bar */
+    .w-progress-wrap {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+      background: rgba(255,255,255,0.07);
+    }
+    .w-progress-bar {
+      height: 100%; width: 0;
+      background: linear-gradient(90deg, #e74c3c, #f39c12);
+      box-shadow: 0 0 10px rgba(231,76,60,0.8);
+    }
+
+    /* Scissor decorations */
+    .w-deco {
+      position: absolute; font-size: 1.5rem; opacity: 0.08;
+      animation: decoFloat ease-in-out infinite;
+    }
+    .w-deco:nth-child(1) { top:12%; right:8%;  animation-duration:4s; animation-delay:0s; }
+    .w-deco:nth-child(2) { top:20%; left:6%;   animation-duration:5s; animation-delay:1s; }
+    .w-deco:nth-child(3) { bottom:20%; right:10%; animation-duration:3.5s; animation-delay:0.5s; }
+    .w-deco:nth-child(4) { bottom:15%; left:8%;  animation-duration:4.5s; animation-delay:1.5s; }
+    @keyframes decoFloat {
+      0%,100% { transform: translateY(0) rotate(0deg); }
+      50%      { transform: translateY(-15px) rotate(10deg); }
+    }
+    @keyframes slideUp {
+      from { opacity:0; transform: translateY(20px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+
+    /* ===== NAVBAR ===== */
+    nav {
+      position: fixed; top: 0; width: 100%;
+      background: rgba(26,26,46,0.95);
+      backdrop-filter: blur(10px);
+      z-index: 1000; padding: 15px 5%;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 2px solid var(--accent);
+      transform: translateY(-100%);
+      animation: slideDown 0.8s ease 1.2s forwards;
+    }
+    @keyframes slideDown { to { transform: translateY(0); } }
+
+    .nav-brand {
+      display: flex; align-items: center; gap: 12px;
+      text-decoration: none;
+    }
+    .nav-logo {
+      width: 45px; height: 45px; border-radius: 50%;
+      object-fit: cover; border: 2px solid var(--accent);
+      display: none;
+    }
+    .nav-logo.visible { display: block; }
+    .nav-logo-placeholder {
+      width: 45px; height: 45px; border-radius: 50%;
+      background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; color: white; font-weight: 900;
+    }
+    /* when logo exists, hide the text name */
+    .nav-logo.visible ~ .nav-name { display: none; }
+    .nav-name {
+      color: white; font-size: 1.3rem; font-weight: 700;
+    }
+
+    /* ===== TYPEWRITER ===== */
+    .typewriter-cursor {
+      display: inline-block; width: 3px; background: var(--accent);
+      animation: blink 0.8s step-end infinite;
+      margin-right: 4px; border-radius: 2px;
+    }
+    @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0; } }
+
+    /* WhatsApp button */
+    .whatsapp-btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: #25D366; color: white !important;
+      padding: 14px 30px; border-radius: 50px;
+      font-weight: 700; font-size: 1.05rem;
+      text-decoration: none; transition: all 0.3s;
+      box-shadow: 0 5px 20px rgba(37,211,102,0.35);
+      margin-top: 10px;
+    }
+    .whatsapp-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(37,211,102,0.5); }
+    .whatsapp-card {
+      background: white; border-radius: 20px; padding: 35px 25px; text-align: center;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.06); transition: transform 0.3s;
+      border-top: 4px solid #25D366;
+    }
+    .whatsapp-card:hover { transform: translateY(-5px); }
+    .nav-links { display: flex; gap: 25px; list-style: none; }
+    .nav-links a {
+      color: rgba(255,255,255,0.8); text-decoration: none;
+      font-size: 0.95rem; transition: color 0.3s;
+      position: relative; padding-bottom: 4px;
+    }
+    .nav-links a::after {
+      content: ''; position: absolute; bottom: 0; right: 0;
+      width: 0; height: 2px; background: var(--accent);
+      transition: width 0.3s;
+    }
+    .nav-links a:hover { color: white; }
+    .nav-links a:hover::after { width: 100%; }
+
+    /* ===== HERO ===== */
+    #hero {
+      min-height: 100vh;
+      background: linear-gradient(135deg, var(--hero-bg) 0%, #16213e 50%, #0f3460 100%);
+      display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden; text-align: center;
+      padding: 100px 5% 60px;
+    }
+
+    /* Animated particles */
+    .particles {
+      position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+    }
+    .particle {
+      position: absolute; width: 4px; height: 4px;
+      background: var(--accent); border-radius: 50%;
+      animation: float linear infinite;
+      opacity: 0;
+    }
+    @keyframes float {
+      0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+      10% { opacity: 0.7; }
+      90% { opacity: 0.7; }
+      100% { transform: translateY(-100px) rotate(720deg); opacity: 0; }
+    }
+
+    /* Geometric shapes */
+    .shape {
+      position: absolute; border-radius: 50%;
+      background: rgba(231, 76, 60, 0.05);
+      animation: morphShape 8s ease-in-out infinite;
+    }
+    .shape-1 { width: 400px; height: 400px; top: -100px; left: -100px; animation-delay: 0s; }
+    .shape-2 { width: 300px; height: 300px; bottom: -50px; right: -50px; animation-delay: 3s; }
+    .shape-3 { width: 200px; height: 200px; top: 50%; left: 50%; animation-delay: 1.5s; }
+    @keyframes morphShape {
+      0%,100% { transform: scale(1) rotate(0deg); }
+      50% { transform: scale(1.1) rotate(45deg); border-radius: 30%; }
+    }
+
+    .hero-content { position: relative; z-index: 2; max-width: 800px; }
+
+    .hero-badge {
+      display: inline-block;
+      background: rgba(231,76,60,0.15);
+      border: 1px solid var(--accent);
+      color: var(--accent); padding: 6px 20px;
+      border-radius: 50px; font-size: 0.85rem;
+      margin-bottom: 25px;
+      opacity: 0; animation: fadeInUp 0.8s ease 1.5s forwards;
+    }
+
+    .hero-logo-img {
+      width: 120px; height: 120px; border-radius: 50%;
+      object-fit: cover; border: 4px solid var(--accent);
+      box-shadow: 0 0 30px rgba(231,76,60,0.4);
+      margin-bottom: 25px; display: none;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+    .hero-logo-img.visible { display: block; margin: 0 auto 25px; }
+    @keyframes glow {
+      from { box-shadow: 0 0 20px rgba(231,76,60,0.4); }
+      to { box-shadow: 0 0 50px rgba(231,76,60,0.8); }
+    }
+
+    .hero-icon {
+      font-size: 5rem; margin-bottom: 20px; display: block;
+      opacity: 0; animation: fadeInDown 0.8s ease 1.4s forwards;
+      filter: drop-shadow(0 0 15px rgba(231,76,60,0.5));
+    }
+
+    .hero-title {
+      font-size: clamp(2.2rem, 6vw, 4.5rem);
+      font-weight: 900; color: white; line-height: 1.2;
+      margin-bottom: 20px;
+      opacity: 0; animation: fadeInUp 0.8s ease 1.6s forwards;
+    }
+    .hero-title span { color: var(--accent); }
+
+    .hero-subtitle {
+      font-size: clamp(1rem, 2.5vw, 1.4rem);
+      color: rgba(255,255,255,0.7); margin-bottom: 40px; line-height: 1.7;
+      opacity: 0; animation: fadeInUp 0.8s ease 1.8s forwards;
+    }
+
+    .hero-buttons {
+      display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;
+      opacity: 0; animation: fadeInUp 0.8s ease 2s forwards;
+    }
+
+    .btn {
+      padding: 14px 35px; border-radius: 50px;
+      font-family: 'Cairo', sans-serif; font-size: 1rem; font-weight: 700;
+      cursor: pointer; text-decoration: none; display: inline-block;
+      transition: all 0.3s ease; border: none;
+    }
+    .btn-primary {
+      background: var(--accent); color: white;
+      box-shadow: 0 5px 20px rgba(231,76,60,0.4);
+    }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(231,76,60,0.6); }
+    .btn-outline {
+      background: transparent; color: white;
+      border: 2px solid rgba(255,255,255,0.4);
+    }
+    .btn-outline:hover { background: rgba(255,255,255,0.1); transform: translateY(-3px); }
+
+    .scroll-indicator {
+      position: absolute; bottom: 30px; left: 50%;
+      transform: translateX(-50%);
+      animation: bounce 2s ease infinite;
+      color: rgba(255,255,255,0.5); font-size: 1.5rem;
+      opacity: 0; animation: fadeIn 1s ease 2.5s forwards, bounce 2s ease 3.5s infinite;
+    }
+    @keyframes bounce { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(10px); } }
+    @keyframes fadeIn { to { opacity: 1; } }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ===== STATS BAR ===== */
+    .stats-bar {
+      background: var(--primary);
+      padding: 30px 5%;
+      display: flex; justify-content: center; flex-wrap: wrap; gap: 40px;
+    }
+    .stat-item { text-align: center; color: white; }
+    .stat-number { font-size: 2rem; font-weight: 900; color: var(--accent); }
+    .stat-icon { font-size: 2rem; margin-bottom: 6px; }
+    .stat-label { font-size: 0.9rem; color: rgba(255,255,255,0.85); font-weight: 600; }
+
+    /* ===== SECTIONS ===== */
+    .section { padding: 80px 5%; }
+    .section-alt { background: var(--section-bg); }
+
+    .section-header { text-align: center; margin-bottom: 60px; }
+    .section-tag {
+      display: inline-block; background: rgba(231,76,60,0.1);
+      color: var(--accent); padding: 5px 18px;
+      border-radius: 50px; font-size: 0.85rem; margin-bottom: 15px;
+    }
+    .section-title {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 900; color: var(--text-dark);
+      position: relative; display: inline-block;
+    }
+    .section-title::after {
+      content: ''; display: block; width: 60px; height: 4px;
+      background: var(--accent); border-radius: 2px;
+      margin: 12px auto 0;
+    }
+    .section-desc { color: #666; margin-top: 15px; font-size: 1rem; max-width: 600px; margin-inline: auto; }
+
+    /* ===== SERVICES ===== */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 25px; max-width: 1100px; margin: 0 auto;
+    }
+    .service-card {
+      background: white; border-radius: 20px;
+      padding: 35px 25px; text-align: center;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+      transition: all 0.4s ease;
+      border-bottom: 3px solid transparent;
+      opacity: 0; transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease, box-shadow 0.3s, border-color 0.3s;
+    }
+    .service-card.animated { opacity: 1; transform: translateY(0); }
+    .service-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+      border-bottom-color: var(--accent);
+    }
+    .service-icon { font-size: 3rem; margin-bottom: 15px; display: block; }
+    .service-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 10px; }
+    .service-desc { color: #666; font-size: 0.9rem; line-height: 1.7; }
+
+    /* ===== PRODUCTS ===== */
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 30px; max-width: 1200px; margin: 0 auto;
+    }
+    .product-card {
+      background: white; border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+      transition: all 0.4s ease;
+      opacity: 0; transform: scale(0.95);
+    }
+    .product-card.animated { opacity: 1; transform: scale(1); }
+    .product-card:hover { transform: translateY(-8px) scale(1.01); box-shadow: 0 20px 50px rgba(0,0,0,0.15); }
+
+    .product-image {
+      width: 100%; height: 220px; object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+    .product-card:hover .product-image { transform: scale(1.05); }
+
+    .product-image-placeholder {
+      width: 100%; height: 220px;
+      background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 4rem; color: #ccc;
+    }
+
+    .product-body { padding: 20px; }
+    .product-category {
+      font-size: 0.75rem; color: var(--accent);
+      font-weight: 600; text-transform: uppercase;
+      letter-spacing: 1px; margin-bottom: 8px;
+    }
+    .product-name { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+    .product-desc { color: #666; font-size: 0.88rem; line-height: 1.6; }
+
+    /* ===== ABOUT ===== */
+    .about-content {
+      max-width: 900px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 50px; align-items: center;
+    }
+    .about-text h3 { font-size: 1.6rem; font-weight: 900; margin-bottom: 15px; }
+    .about-text p { color: #555; line-height: 1.9; font-size: 1rem; }
+    .about-features { list-style: none; margin-top: 20px; }
+    .about-features li {
+      padding: 8px 0; color: #444; display: flex; align-items: center; gap: 10px;
+    }
+    .about-features li::before {
+      content: '✓'; background: var(--accent);
+      color: white; width: 22px; height: 22px;
+      border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; font-size: 0.75rem; flex-shrink: 0;
+    }
+    .about-visual {
+      background: linear-gradient(135deg, var(--primary), var(--hero-bg));
+      border-radius: 20px; padding: 40px; text-align: center; color: white;
+    }
+    .about-visual .big-icon { font-size: 6rem; display: block; margin-bottom: 20px; }
+    .about-visual h4 { font-size: 1.4rem; font-weight: 700; }
+    .about-visual p { opacity: 0.8; margin-top: 10px; line-height: 1.7; }
+
+    /* ===== CONTACT ===== */
+    .contact-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 25px; max-width: 900px; margin: 0 auto;
+    }
+    .contact-card {
+      background: white; border-radius: 20px; padding: 30px 20px; text-align: center;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.06); transition: transform 0.3s;
+    }
+    .contact-card:hover { transform: translateY(-5px); }
+    .contact-icon { font-size: 2.5rem; margin-bottom: 12px; display: block; }
+    .contact-label { font-size: 0.85rem; color: #999; margin-bottom: 6px; }
+    .contact-value { font-weight: 700; color: var(--text-dark); font-size: 1rem; }
+    .contact-value a { color: var(--accent); text-decoration: none; }
+
+    /* ===== FOOTER ===== */
+    footer {
+      background: var(--hero-bg); color: rgba(255,255,255,0.7);
+      text-align: center; padding: 30px 5%;
+    }
+    footer .footer-name { color: var(--accent); font-weight: 700; }
+    footer .admin-link {
+      display: inline-block; margin-top: 10px;
+      color: rgba(255,255,255,0.3); font-size: 0.75rem;
+      text-decoration: none; transition: color 0.3s;
+    }
+    footer .admin-link:hover { color: var(--accent); }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .about-content { grid-template-columns: 1fr; gap: 30px; }
+      .hero-buttons { flex-direction: column; align-items: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Welcome Screen -->
+<div id="loading">
+  <div class="w-particles" id="w-particles"></div>
+  <div class="w-rings">
+    <div class="w-ring"></div>
+    <div class="w-ring"></div>
+    <div class="w-ring"></div>
+  </div>
+  <div class="w-deco">✂️</div>
+  <div class="w-deco">🧵</div>
+  <div class="w-deco">👔</div>
+  <div class="w-deco">🪡</div>
+
+  <p class="w-welcome">أهلاً وسهلاً بكم</p>
+  <div class="w-logo-wrap">
+    <img id="w-logo-img" class="w-logo-img" src="" alt="">
+    <div class="w-logo-circle" id="w-logo-icon">👔</div>
+  </div>
+  <h1 class="w-name" id="w-factory-name">مصنع الملابس</h1>
+  <div class="w-line"></div>
+  <p class="w-subtitle" id="w-subtitle">نصنع الجودة ونرتقي بالأناقة</p>
+
+  <div class="w-progress-wrap">
+    <div class="w-progress-bar" id="w-progress"></div>
+  </div>
+</div>
+
+<!-- Navbar -->
+<nav id="navbar">
+  <a href="#hero" class="nav-brand">
+    <img id="nav-logo" class="nav-logo" src="" alt="logo">
+    <div id="nav-placeholder" class="nav-logo-placeholder" style="display:none">م</div>
+    <span id="nav-name" class="nav-name" style="display:none">مصنع الملابس</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#services">خدماتنا</a></li>
+    <li><a href="#products">منتجاتنا</a></li>
+    <li><a href="#about">من نحن</a></li>
+    <li><a href="#contact">تواصل معنا</a></li>
+  </ul>
+</nav>
+
+<!-- Hero Section -->
+<section id="hero">
+  <div class="particles" id="particles"></div>
+  <div class="shape shape-1"></div>
+  <div class="shape shape-2"></div>
+  <div class="shape shape-3"></div>
+
+  <div class="hero-content">
+    <div class="hero-badge">🌟 مرحباً بكم</div>
+    <img id="hero-logo" class="hero-logo-img" src="" alt="logo">
+    <span id="hero-icon" class="hero-icon">👔</span>
+    <h1 class="hero-title" id="hero-title">مصنع <span id="hero-name-span">الملابس</span></h1>
+    <p class="hero-subtitle" id="hero-subtitle">نصنع الجودة ونرتقي بالأناقة</p>
+    <div class="hero-buttons">
+      <a href="#products" class="btn btn-primary">تصفح منتجاتنا</a>
+      <a href="#contact" class="btn btn-outline">تواصل معنا</a>
+    </div>
+  </div>
+  <div class="scroll-indicator">↓</div>
+</section>
+
+<!-- Stats Bar -->
+<div class="stats-bar" id="stats-bar">
+  <div class="stat-item">
+    <div class="stat-icon">👗</div>
+    <div class="stat-label">تنوع في المنتجات</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon">🏆</div>
+    <div class="stat-label">تصنيع لأشهر البراندات</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon">✂️</div>
+    <div class="stat-label">خبرة كبيرة في صناعة الملابس</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-number">100%</div>
+    <div class="stat-label">جودة مضمونة</div>
+  </div>
+</div>
+
+<!-- Services Section -->
+<section class="section" id="services">
+  <div class="section-header">
+    <span class="section-tag">ما نقدمه</span>
+    <h2 class="section-title">خدماتنا</h2>
+    <p class="section-desc">نقدم مجموعة متكاملة من الخدمات لتلبية جميع احتياجاتكم</p>
+  </div>
+  <div class="services-grid" id="services-grid"></div>
+</section>
+
+<!-- Products Section -->
+<section class="section section-alt" id="products">
+  <div class="section-header">
+    <span class="section-tag">تشكيلتنا</span>
+    <h2 class="section-title">منتجاتنا</h2>
+    <p class="section-desc">اكتشف تشكيلتنا الواسعة من الملابس عالية الجودة</p>
+  </div>
+  <div class="products-grid" id="products-grid"></div>
+</section>
+
+<!-- About Section -->
+<section class="section" id="about">
+  <div class="section-header">
+    <span class="section-tag">قصتنا</span>
+    <h2 class="section-title">من نحن</h2>
+  </div>
+  <div class="about-content">
+    <div class="about-text">
+      <h3>مصنعنا.. حيث تولد الأناقة</h3>
+      <p id="about-text">نحن مصنع متخصص في صناعة الملابس بأعلى معايير الجودة</p>
+      <ul class="about-features">
+        <li>أقمشة مختارة بعناية فائقة</li>
+        <li>خياطة دقيقة واحترافية</li>
+        <li>تصاميم تواكب أحدث الموضات</li>
+        <li>أسعار تنافسية وجودة لا تُنافس</li>
+      </ul>
+    </div>
+    <div class="about-visual">
+      <span class="big-icon">🏭</span>
+      <h4 id="about-factory-name">مصنع الملابس</h4>
+      <p>نفخر بكل قطعة نصنعها، فكل خيط يحكي قصة الإتقان والجودة</p>
+    </div>
+  </div>
+</section>
+
+<!-- Contact Section -->
+<section class="section section-alt" id="contact">
+  <div class="section-header">
+    <span class="section-tag">نحن هنا</span>
+    <h2 class="section-title">تواصل معنا</h2>
+    <p class="section-desc">يسعدنا خدمتكم والرد على استفساراتكم في أقرب وقت</p>
+  </div>
+  <div class="contact-grid" id="contact-grid"></div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <p>جميع الحقوق محفوظة &copy; <span id="footer-year"></span> - <span class="footer-name" id="footer-name">مصنع الملابس</span></p>
+</footer>
+
+<script>
+  const API = '';
+
+  async function loadData() {
+    try {
+      const res = await fetch(`${API}/api/settings`);
+      const data = await res.json();
+      applySettings(data);
+      renderServices(data.services || []);
+      renderProducts(data.products || []);
+      renderContact(data);
+    } catch(e) {
+      console.error('خطأ في تحميل البيانات', e);
+    }
+  }
+
+  function applySettings(s) {
+    // Colors
+    document.documentElement.style.setProperty('--primary', s.primaryColor || '#2c3e50');
+    document.documentElement.style.setProperty('--accent', s.accentColor || '#e74c3c');
+    document.documentElement.style.setProperty('--hero-bg', s.heroBackground || '#1a1a2e');
+
+    const name = s.factoryName || 'مصنع الملابس';
+    document.title = name;
+    document.getElementById('about-factory-name').textContent = name;
+    document.getElementById('footer-name').textContent = name;
+
+    // Logo vs Name — show only one
+    if (s.logoUrl) {
+      // Has logo: show logo in nav, hide placeholder & text
+      document.getElementById('nav-logo').src = s.logoUrl;
+      document.getElementById('nav-logo').classList.add('visible');
+      document.getElementById('nav-placeholder').style.display = 'none';
+      document.getElementById('nav-name').style.display = 'none';
+      // Hero: show logo image, hide icon
+      document.getElementById('hero-logo').src = s.logoUrl;
+      document.getElementById('hero-logo').classList.add('visible');
+      document.getElementById('hero-icon').style.display = 'none';
+    } else {
+      // No logo: show placeholder letter + name text
+      document.getElementById('nav-logo').style.display = 'none';
+      document.getElementById('nav-placeholder').textContent = name[0];
+      document.getElementById('nav-placeholder').style.display = 'flex';
+      document.getElementById('nav-name').textContent = name;
+      document.getElementById('nav-name').style.display = 'block';
+    }
+
+    // Typewriter on hero title & subtitle (after loading delay)
+    const titleText = s.welcomeMessage || name;
+    const subText   = s.welcomeSubMessage || 'نصنع الجودة ونرتقي بالأناقة';
+    setTimeout(() => {
+      typeWriter(document.getElementById('hero-title'), titleText, 60, () => {
+        setTimeout(() => typeWriter(document.getElementById('hero-subtitle'), subText, 40), 200);
+      });
+    }, 1400);
+
+    // About
+    if (s.about) document.getElementById('about-text').textContent = s.about;
+
+    document.getElementById('footer-year').textContent = new Date().getFullYear();
+  }
+
+  function renderServices(services) {
+    const grid = document.getElementById('services-grid');
+    grid.innerHTML = services.map((s, i) => `
+      <div class="service-card" style="transition-delay:${i * 0.1}s">
+        <span class="service-icon">${s.icon}</span>
+        <h3 class="service-title">${s.title}</h3>
+        <p class="service-desc">${s.desc}</p>
+      </div>
+    `).join('');
+    observeCards('.service-card');
+  }
+
+  function renderProducts(products) {
+    const grid = document.getElementById('products-grid');
+    grid.innerHTML = products.map((p, i) => `
+      <div class="product-card" style="transition-delay:${i * 0.1}s">
+        ${p.image
+          ? `<img src="${p.image}" class="product-image" alt="${p.name}" loading="lazy">`
+          : `<div class="product-image-placeholder">👕</div>`}
+        <div class="product-body">
+          <div class="product-category">${p.category || ''}</div>
+          <h3 class="product-name">${p.name}</h3>
+          <p class="product-desc">${p.description || ''}</p>
+        </div>
+      </div>
+    `).join('');
+    observeCards('.product-card');
+  }
+
+  function renderContact(s) {
+    let html = '';
+
+    // WhatsApp card — always shown first if number exists
+    if (s.contactWhatsapp) {
+      const waNum = s.contactWhatsapp.replace(/\D/g, '');
+      html += `
+        <div class="whatsapp-card">
+          <span class="contact-icon">💬</span>
+          <div class="contact-label">تواصل معنا مباشرة</div>
+          <a href="https://wa.me/${waNum}" target="_blank" class="whatsapp-btn">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            راسلنا على واتساب
+          </a>
+          <div style="margin-top:10px;font-size:0.8rem;color:#999">${s.contactWhatsapp}</div>
+        </div>`;
+    }
+
+    // Other contact cards
+    if (s.contactPhone) html += `
+      <div class="contact-card">
+        <span class="contact-icon">📞</span>
+        <div class="contact-label">هاتف</div>
+        <div class="contact-value"><a href="tel:${s.contactPhone}">${s.contactPhone}</a></div>
+      </div>`;
+    if (s.contactEmail) html += `
+      <div class="contact-card">
+        <span class="contact-icon">📧</span>
+        <div class="contact-label">بريد إلكتروني</div>
+        <div class="contact-value"><a href="mailto:${s.contactEmail}">${s.contactEmail}</a></div>
+      </div>`;
+    if (s.contactAddress) html += `
+      <div class="contact-card">
+        <span class="contact-icon">📍</span>
+        <div class="contact-label">العنوان</div>
+        <div class="contact-value">${s.contactAddress}</div>
+      </div>`;
+
+    if (!html) html = `
+      <div class="contact-card">
+        <span class="contact-icon">💬</span>
+        <div class="contact-label">للتواصل</div>
+        <div class="contact-value">أضف رقم واتساب من لوحة التحكم</div>
+      </div>`;
+
+    document.getElementById('contact-grid').innerHTML = html;
+  }
+
+  // Intersection Observer for scroll animations
+  function observeCards(selector) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('animated'); } });
+    }, { threshold: 0.1 });
+    document.querySelectorAll(selector).forEach(el => observer.observe(el));
+  }
+
+  // Hero particles
+  function createParticles() {
+    const container = document.getElementById('particles');
+    for (let i = 0; i < 30; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.cssText = `left:${Math.random()*100}%;width:${Math.random()*6+2}px;height:${Math.random()*6+2}px;animation-duration:${Math.random()*10+8}s;animation-delay:${Math.random()*10}s;`;
+      container.appendChild(p);
+    }
+  }
+
+  // Welcome screen particles
+  function createWelcomeParticles() {
+    const container = document.getElementById('w-particles');
+    const colors = ['#e74c3c','#f39c12','#3498db','#ffffff'];
+    for (let i = 0; i < 40; i++) {
+      const p = document.createElement('div');
+      p.className = 'w-particle';
+      const size = Math.random() * 5 + 2;
+      p.style.cssText = `
+        left:${Math.random()*100}%;
+        width:${size}px; height:${size}px;
+        background:${colors[Math.floor(Math.random()*colors.length)]};
+        animation-duration:${Math.random()*8+6}s;
+        animation-delay:${Math.random()*6}s;
+      `;
+      container.appendChild(p);
+    }
+  }
+
+  // Animate progress bar then hide welcome screen
+  function runWelcomeSequence(duration = 3200) {
+    const bar = document.getElementById('w-progress');
+    const start = performance.now();
+    function step(now) {
+      const pct = Math.min((now - start) / duration * 100, 100);
+      bar.style.width = pct + '%';
+      if (pct < 100) requestAnimationFrame(step);
+      else {
+        setTimeout(() => document.getElementById('loading').classList.add('hide'), 200);
+      }
+    }
+    requestAnimationFrame(step);
+  }
+
+  // Update welcome screen with real settings
+  function applyWelcomeScreen(s) {
+    const name = s.factoryName || 'مصنع الملابس';
+    document.getElementById('w-factory-name').textContent = name;
+    if (s.welcomeSubMessage) document.getElementById('w-subtitle').textContent = s.welcomeSubMessage;
+    if (s.logoUrl) {
+      const img = document.getElementById('w-logo-img');
+      img.src = s.logoUrl;
+      img.classList.add('show');
+      document.getElementById('w-logo-icon').style.display = 'none';
+    }
+  }
+
+  // Typewriter with optional callback when done
+  function typeWriter(el, text, speed = 80, onDone) {
+    el.innerHTML = '';
+    const cursor = document.createElement('span');
+    cursor.className = 'typewriter-cursor';
+    cursor.style.height = '0.85em';
+    cursor.style.verticalAlign = 'middle';
+    el.appendChild(cursor);
+    let i = 0;
+    function type() {
+      if (i < text.length) {
+        el.insertBefore(document.createTextNode(text[i++]), cursor);
+        setTimeout(type, speed);
+      } else {
+        cursor.remove();
+        if (onDone) onDone();
+      }
+    }
+    type();
+  }
+
+  // Auto-refresh: poll for changes every 8 seconds
+  let lastVersion = 0;
+  async function pollForUpdates() {
+    try {
+      const res  = await fetch('/api/version');
+      const data = await res.json();
+      if (lastVersion && data.lastUpdated > lastVersion) await loadData();
+      lastVersion = data.lastUpdated;
+    } catch(e) {}
+    setTimeout(pollForUpdates, 8000);
+  }
+
+  // Init
+  window.addEventListener('load', async () => {
+    createWelcomeParticles();
+    createParticles();
+    runWelcomeSequence(3400);
+
+    // Load data in background while animation plays
+    const res  = await fetch('/api/settings');
+    const data = await res.json();
+    applyWelcomeScreen(data);      // update welcome screen with real name/logo
+    applySettings(data);
+    renderServices(data.services || []);
+    renderProducts(data.products || []);
+    renderContact(data);
+    pollForUpdates();
+  });
+</script>
+</body>
+</html>
