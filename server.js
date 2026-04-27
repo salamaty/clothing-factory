@@ -58,7 +58,15 @@ const DEFAULT_SETTINGS = {
   ],
   primaryColor: "#2c3e50",
   accentColor: "#e74c3c",
-  heroBackground: "#1a1a2e"
+  heroBackground: "#1a1a2e",
+  terms: [
+    "يلتزم الطرف الأول (المصنع) بتسليم البضاعة في الموعد المحدد وبالمواصفات المتفق عليها.",
+    "يلتزم الطرف الثاني (العميل) بسداد المبلغ المتبقي كاملاً عند استلام البضاعة.",
+    "في حالة تأخر العميل عن استلام البضاعة أكثر من 7 أيام من الموعد، تُحتسب رسوم تخزين يومية.",
+    "لا يحق للعميل إلغاء الطلب بعد بدء التصنيع، ويُعدّ المقدم المدفوع غير قابل للاسترداد.",
+    "تعتبر المواصفات المثبتة في هذا العقد هي المرجع الوحيد في حالة أي نزاع.",
+    "يُحكّم هذا العقد وفقاً لأحكام القانون المعمول به في جمهورية مصر العربية."
+  ]
 };
 
 // Load settings
@@ -104,7 +112,7 @@ app.get('/api/settings', (req, res) => {
 app.post('/api/settings', (req, res) => {
   const settings = loadSettings();
   const allowed = ['factoryName', 'welcomeMessage', 'welcomeSubMessage', 'contactPhone',
-    'contactEmail', 'contactAddress', 'contactWhatsapp', 'about', 'primaryColor', 'accentColor', 'heroBackground'];
+    'contactEmail', 'contactAddress', 'contactWhatsapp', 'about', 'primaryColor', 'accentColor', 'heroBackground', 'terms'];
   allowed.forEach(key => {
     if (req.body[key] !== undefined) settings[key] = req.body[key];
   });

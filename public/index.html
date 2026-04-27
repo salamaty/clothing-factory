@@ -946,18 +946,18 @@
     }
   }
 
-  // Typewriter with optional callback when done
+  // Typewriter with RTL-safe character insertion
   function typeWriter(el, text, speed = 80, onDone) {
-    el.innerHTML = '';
     const cursor = document.createElement('span');
     cursor.className = 'typewriter-cursor';
     cursor.style.height = '0.85em';
     cursor.style.verticalAlign = 'middle';
-    el.appendChild(cursor);
     let i = 0;
     function type() {
+      el.textContent = text.slice(0, i);
+      el.appendChild(cursor);
       if (i < text.length) {
-        el.insertBefore(document.createTextNode(text[i++]), cursor);
+        i++;
         setTimeout(type, speed);
       } else {
         cursor.remove();

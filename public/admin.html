@@ -263,12 +263,54 @@
     .stat-card-num { font-size: 1.8rem; font-weight: 900; line-height: 1; }
     .stat-card-label { font-size: 0.8rem; color: #888; }
 
+    /* ===== TERMS ===== */
+    .term-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      background: #fafafa; border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 14px; margin-bottom: 10px;
+    }
+    .term-num {
+      min-width: 26px; height: 26px; border-radius: 50%;
+      background: var(--primary); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.78rem; font-weight: 700; flex-shrink: 0; margin-top: 6px;
+    }
+    .term-row textarea {
+      flex: 1; border: none; background: transparent;
+      font-family: 'Cairo', sans-serif; font-size: 0.88rem;
+      color: var(--text); resize: none; line-height: 1.6;
+      outline: none; min-height: 40px;
+    }
+
+    /* ===== MOBILE SIDEBAR ===== */
+    .menu-toggle {
+      display: none; background: none; border: none;
+      cursor: pointer; flex-direction: column; gap: 5px; padding: 5px;
+    }
+    .menu-toggle span {
+      display: block; width: 22px; height: 2px;
+      background: var(--text); border-radius: 2px; transition: all 0.3s;
+    }
+    .sidebar-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 99;
+    }
+    .sidebar-overlay.open { display: block; }
+
     /* ===== RESPONSIVE ===== */
     @media (max-width: 768px) {
-      .sidebar { width: 60px; }
-      .sidebar .brand-text, .sidebar .nav-item span, .sidebar .nav-section-label, .sidebar-footer { display: none; }
-      .main { margin-right: 60px; }
+      .sidebar {
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        z-index: 100;
+      }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-right: 0; }
       .form-row { grid-template-columns: 1fr; }
+      .menu-toggle { display: flex; }
+      .topbar { padding: 0 15px; }
+      .content { padding: 15px; }
+      .stats-row { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
@@ -296,6 +338,7 @@
     <div class="nav-item" data-page="products"><span class="icon">👕</span><span>المنتجات</span></div>
     <div class="nav-item" data-page="services"><span class="icon">⚡</span><span>الخدمات</span></div>
     <div class="nav-item" data-page="contact"><span class="icon">📞</span><span>معلومات التواصل</span></div>
+    <div class="nav-item" data-page="terms"><span class="icon">📜</span><span>شروط العقود</span></div>
     <div class="nav-section-label">العملاء</div>
     <div class="nav-item" data-page="orders"><span class="icon">📋</span><span>الحجوزات والعقود</span></div>
   </nav>
@@ -306,9 +349,15 @@
   </div>
 </aside>
 
+<!-- Sidebar overlay for mobile -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
 <!-- Main -->
 <div class="main">
   <div class="topbar">
+    <button class="menu-toggle" id="menu-toggle" aria-label="القائمة">
+      <span></span><span></span><span></span>
+    </button>
     <div class="topbar-title" id="page-title">لوحة التحكم</div>
     <div class="topbar-actions"></div>
   </div>
@@ -454,6 +503,19 @@
         <div class="items-list" id="orders-list">
           <p style="text-align:center;color:#aaa;padding:30px;">لا توجد حجوزات بعد</p>
         </div>
+      </div>
+    </div>
+
+    <!-- TERMS PAGE -->
+    <div class="page" id="page-terms">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📜 شروط وأحكام العقود</div>
+          <button class="btn btn-success btn-sm" onclick="addTerm()">➕ إضافة شرط</button>
+        </div>
+        <p style="color:#888;font-size:0.85rem;margin-bottom:18px;">هذه الشروط ستظهر في كل عقود التصنيع تلقائياً. يمكنك تعديلها أو حذفها أو إضافة شروط جديدة.</p>
+        <div id="terms-list"></div>
+        <button class="btn btn-success" style="margin-top:10px;" onclick="saveTerms()">💾 حفظ الشروط</button>
       </div>
     </div>
 
@@ -678,6 +740,18 @@
   let services = [];
   let pendingProductImageUrl = '';
 
+  // ===== MOBILE SIDEBAR =====
+  const sidebar = document.querySelector('.sidebar');
+  const sidebarOverlay = document.getElementById('sidebar-overlay');
+  const menuToggle = document.getElementById('menu-toggle');
+
+  function toggleSidebar(open) {
+    sidebar.classList.toggle('open', open);
+    sidebarOverlay.classList.toggle('open', open);
+  }
+  menuToggle.addEventListener('click', () => toggleSidebar(!sidebar.classList.contains('open')));
+  sidebarOverlay.addEventListener('click', () => toggleSidebar(false));
+
   // ===== NAVIGATION =====
   function goToPage(name) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -685,8 +759,11 @@
     document.getElementById(`page-${name}`).classList.add('active');
     document.querySelector(`[data-page="${name}"]`).classList.add('active');
     const titles = { dashboard:'لوحة التحكم', general:'المعلومات العامة', appearance:'المظهر والألوان',
-      products:'المنتجات', services:'الخدمات', contact:'معلومات التواصل', orders:'الحجوزات والعقود' };
+      products:'المنتجات', services:'الخدمات', contact:'معلومات التواصل',
+      terms:'شروط العقود', orders:'الحجوزات والعقود' };
     document.getElementById('page-title').textContent = titles[name] || '';
+    if (name === 'terms') renderTermsList();
+    toggleSidebar(false);
   }
   document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', () => goToPage(item.dataset.page));
@@ -1146,6 +1223,51 @@
 
   function viewContract(id) {
     window.open(`/contract/${id}`, '_blank');
+  }
+
+  // ===== TERMS =====
+  let termsData = [];
+
+  const DEFAULT_TERMS = [
+    'يلتزم الطرف الأول (المصنع) بتسليم البضاعة في الموعد المحدد وبالمواصفات المتفق عليها.',
+    'يلتزم الطرف الثاني (العميل) بسداد المبلغ المتبقي كاملاً عند استلام البضاعة.',
+    'في حالة تأخر العميل عن استلام البضاعة أكثر من 7 أيام من الموعد، تُحتسب رسوم تخزين يومية.',
+    'لا يحق للعميل إلغاء الطلب بعد بدء التصنيع، ويُعدّ المقدم المدفوع غير قابل للاسترداد.',
+    'تعتبر المواصفات المثبتة في هذا العقد هي المرجع الوحيد في حالة أي نزاع.',
+    'يُحكّم هذا العقد وفقاً لأحكام القانون المعمول به في جمهورية مصر العربية.'
+  ];
+
+  function renderTermsList() {
+    if (!termsData.length) termsData = [...(settings.terms || DEFAULT_TERMS)];
+    const list = document.getElementById('terms-list');
+    list.innerHTML = termsData.map((t, i) => `
+      <div class="term-row">
+        <div class="term-num">${i + 1}</div>
+        <textarea rows="2" oninput="termsData[${i}]=this.value">${t}</textarea>
+        <button class="btn btn-danger btn-icon btn-sm" onclick="removeTerm(${i})" title="حذف">🗑️</button>
+      </div>
+    `).join('');
+  }
+
+  function addTerm() {
+    if (!termsData.length) termsData = [...(settings.terms || DEFAULT_TERMS)];
+    termsData.push('اكتب الشرط هنا...');
+    renderTermsList();
+    const rows = document.querySelectorAll('.term-row');
+    const last = rows[rows.length - 1];
+    if (last) { const ta = last.querySelector('textarea'); ta.focus(); ta.select(); }
+  }
+
+  function removeTerm(i) {
+    termsData.splice(i, 1);
+    renderTermsList();
+  }
+
+  async function saveTerms() {
+    const body = { terms: termsData };
+    const res = await fetch(`${API}/api/settings`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    if (res.ok) { showToast('تم حفظ الشروط بنجاح'); settings.terms = [...termsData]; }
+    else showToast('حدث خطأ', 'error');
   }
 
   // Init
