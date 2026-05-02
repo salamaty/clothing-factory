@@ -1206,28 +1206,27 @@
     document.getElementById('footer-year').textContent = new Date().getFullYear();
   }
 
-  // ── Marquee engine (requestAnimationFrame — no CSS animation needed) ──
-  const _mq = {};   // { id → rafId }
+  // ── Marquee engine (pure rAF — no CSS animation) ──────────────────────
+  // resetAt = exact px to shift before looping (calculated from item math,
+  // NOT from scrollWidth which can race against layout on mobile).
+  const _mq = {};
 
-  function animateMarquee(trackId, speed) {
-    // Cancel any previous loop for this track
+  function animateMarquee(trackId, speed, resetAt) {
     if (_mq[trackId] != null) { cancelAnimationFrame(_mq[trackId]); _mq[trackId] = null; }
-
     const track = document.getElementById(trackId);
-    if (!track || !track.children.length) return;
+    if (!track || !track.children.length || resetAt <= 0) return;
 
     let x = 0, prevT = null, paused = false;
 
-    // Pause on mouse hover (desktop)
+    // Pause on hover (desktop)
     track.addEventListener('mouseenter', () => { paused = true; });
     track.addEventListener('mouseleave', () => { paused = false; prevT = null; });
 
     function step(t) {
       if (!paused) {
         if (prevT !== null) {
-          x -= speed * (t - prevT);         // move left by speed px/ms
-          const half = track.scrollWidth / 2;
-          if (half > 0 && x <= -half) x += half;   // seamless reset
+          x -= speed * (t - prevT);    // move left (negative = left)
+          if (x <= -resetAt) x += resetAt;  // seamless reset, never blank
         }
         prevT = t;
         track.style.transform = 'translateX(' + Math.round(x) + 'px)';
@@ -1239,11 +1238,19 @@
     _mq[trackId] = requestAnimationFrame(step);
   }
 
+  // Spacing = card width + gap (flex gap:20px between every card incl. between copies)
+  const SVC_SPACING = 230;   // service card 210px + 20px gap
+  const PRD_SPACING = 260;   // product  card 240px + 20px gap
+
+  function mqCopies(itemCount, spacing) {
+    const vw = window.innerWidth || 1280;
+    let c = Math.max(4, Math.ceil((vw * 2.5) / (itemCount * spacing)));
+    return c % 2 === 0 ? c : c + 1;   // must be even for seamless half-reset
+  }
+
   function renderServices(services) {
     const track = document.getElementById('services-marquee-track');
     if (!track) return;
-
-    // Reset position
     track.style.transform = '';
     if (_mq['services-marquee-track'] != null) {
       cancelAnimationFrame(_mq['services-marquee-track']);
@@ -1260,25 +1267,20 @@
         <span class="service-icon">${s.icon || '⚙️'}</span>
         <h3 class="service-title">${s.title}</h3>
         <p class="service-desc">${s.desc || ''}</p>
-      </div>
-    `).join('');
+      </div>`).join('');
 
-    // Even number of copies ≥ 4 so scrollWidth/2 covers the full viewport
-    const vw = window.innerWidth || 1280;
-    let copies = Math.max(4, Math.ceil((vw * 2.5) / (services.length * 230)));
-    if (copies % 2 !== 0) copies++;
+    const copies  = mqCopies(services.length, SVC_SPACING);
+    const resetAt = (copies / 2) * services.length * SVC_SPACING;
     let out = '';
     for (let i = 0; i < copies; i++) out += html;
     track.innerHTML = out;
 
-    // 0.07 px/ms ≈ 70 px/s — smooth, readable speed
-    animateMarquee('services-marquee-track', 0.07);
+    animateMarquee('services-marquee-track', 0.07, resetAt);
   }
 
   function renderProducts(products) {
     const track = document.getElementById('products-marquee-track');
     if (!track) return;
-
     track.style.transform = '';
     if (_mq['products-marquee-track'] != null) {
       cancelAnimationFrame(_mq['products-marquee-track']);
@@ -1300,18 +1302,15 @@
           <h3 class="product-name">${p.name}</h3>
           <p class="product-desc">${p.description || ''}</p>
         </div>
-      </div>
-    `).join('');
+      </div>`).join('');
 
-    const vw = window.innerWidth || 1280;
-    let copies = Math.max(4, Math.ceil((vw * 2.5) / (products.length * 260)));
-    if (copies % 2 !== 0) copies++;
+    const copies  = mqCopies(products.length, PRD_SPACING);
+    const resetAt = (copies / 2) * products.length * PRD_SPACING;
     let out = '';
     for (let i = 0; i < copies; i++) out += html;
     track.innerHTML = out;
 
-    // 0.055 px/ms ≈ 55 px/s — slightly slower for product cards
-    animateMarquee('products-marquee-track', 0.055);
+    animateMarquee('products-marquee-track', 0.055, resetAt);
   }
 
   function renderContact(s) {
