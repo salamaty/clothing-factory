@@ -608,14 +608,7 @@
       display: flex;
       gap: 20px;
       width: max-content;
-      animation: marquee-ltr 28s linear infinite;
       padding: 8px 0;
-    }
-    .marquee-track:hover { animation-play-state: paused; }
-
-    @keyframes marquee-ltr {
-      0%   { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
     }
 
     /* Service card in marquee */
@@ -1213,14 +1206,55 @@
     document.getElementById('footer-year').textContent = new Date().getFullYear();
   }
 
+  // ── Marquee engine (requestAnimationFrame — no CSS animation needed) ──
+  const _mq = {};   // { id → rafId }
+
+  function animateMarquee(trackId, speed) {
+    // Cancel any previous loop for this track
+    if (_mq[trackId] != null) { cancelAnimationFrame(_mq[trackId]); _mq[trackId] = null; }
+
+    const track = document.getElementById(trackId);
+    if (!track || !track.children.length) return;
+
+    let x = 0, prevT = null, paused = false;
+
+    // Pause on mouse hover (desktop)
+    track.addEventListener('mouseenter', () => { paused = true; });
+    track.addEventListener('mouseleave', () => { paused = false; prevT = null; });
+
+    function step(t) {
+      if (!paused) {
+        if (prevT !== null) {
+          x -= speed * (t - prevT);         // move left by speed px/ms
+          const half = track.scrollWidth / 2;
+          if (half > 0 && x <= -half) x += half;   // seamless reset
+        }
+        prevT = t;
+        track.style.transform = 'translateX(' + Math.round(x) + 'px)';
+      } else {
+        prevT = null;
+      }
+      _mq[trackId] = requestAnimationFrame(step);
+    }
+    _mq[trackId] = requestAnimationFrame(step);
+  }
+
   function renderServices(services) {
     const track = document.getElementById('services-marquee-track');
     if (!track) return;
+
+    // Reset position
+    track.style.transform = '';
+    if (_mq['services-marquee-track'] != null) {
+      cancelAnimationFrame(_mq['services-marquee-track']);
+      _mq['services-marquee-track'] = null;
+    }
+
     if (!services || services.length === 0) {
       track.innerHTML = '<div class="mqsvc-card"><span class="service-icon">⚙️</span><h3 class="service-title">لا توجد خدمات</h3><p class="service-desc">أضف خدماتك من لوحة التحكم</p></div>';
-      track.style.animation = 'none';
       return;
     }
+
     const html = services.map(s => `
       <div class="mqsvc-card">
         <span class="service-icon">${s.icon || '⚙️'}</span>
@@ -1228,30 +1262,34 @@
         <p class="service-desc">${s.desc || ''}</p>
       </div>
     `).join('');
-    // Ensure track half-width > viewport so no gaps appear
-    const itemW = 230;
+
+    // Even number of copies ≥ 4 so scrollWidth/2 covers the full viewport
     const vw = window.innerWidth || 1280;
-    let copies = Math.max(4, Math.ceil((vw * 2.5) / (services.length * itemW)));
+    let copies = Math.max(4, Math.ceil((vw * 2.5) / (services.length * 230)));
     if (copies % 2 !== 0) copies++;
-    let repeated = '';
-    for (let i = 0; i < copies; i++) repeated += html;
-    track.innerHTML = repeated;
-    const halfPx = services.length * copies * itemW / 2;
-    const dur    = Math.max(18, Math.round(halfPx / 70)) + 's';
-    track.style.animation = 'none';        // stop first
-    void track.offsetHeight;               // force reflow → animation restart
-    track.style.animation = '';            // let CSS class take over
-    track.style.animationDuration = dur;
+    let out = '';
+    for (let i = 0; i < copies; i++) out += html;
+    track.innerHTML = out;
+
+    // 0.07 px/ms ≈ 70 px/s — smooth, readable speed
+    animateMarquee('services-marquee-track', 0.07);
   }
 
   function renderProducts(products) {
     const track = document.getElementById('products-marquee-track');
     if (!track) return;
+
+    track.style.transform = '';
+    if (_mq['products-marquee-track'] != null) {
+      cancelAnimationFrame(_mq['products-marquee-track']);
+      _mq['products-marquee-track'] = null;
+    }
+
     if (!products || products.length === 0) {
       track.innerHTML = '<div class="mqprd-card"><div class="product-image-placeholder">👕</div><div class="product-body"><h3 class="product-name">لا توجد منتجات</h3><p class="product-desc">أضف منتجاتك من لوحة التحكم</p></div></div>';
-      track.style.animation = 'none';
       return;
     }
+
     const html = products.map(p => `
       <div class="mqprd-card">
         ${p.image
@@ -1264,20 +1302,16 @@
         </div>
       </div>
     `).join('');
-    // Ensure track half-width > viewport so no gaps appear
-    const itemW = 260;
+
     const vw = window.innerWidth || 1280;
-    let copies = Math.max(4, Math.ceil((vw * 2.5) / (products.length * itemW)));
+    let copies = Math.max(4, Math.ceil((vw * 2.5) / (products.length * 260)));
     if (copies % 2 !== 0) copies++;
-    let repeated = '';
-    for (let i = 0; i < copies; i++) repeated += html;
-    track.innerHTML = repeated;
-    const halfPx = products.length * copies * itemW / 2;
-    const dur    = Math.max(22, Math.round(halfPx / 70)) + 's';
-    track.style.animation = 'none';        // stop first
-    void track.offsetHeight;               // force reflow → animation restart
-    track.style.animation = '';            // let CSS class take over
-    track.style.animationDuration = dur;
+    let out = '';
+    for (let i = 0; i < copies; i++) out += html;
+    track.innerHTML = out;
+
+    // 0.055 px/ms ≈ 55 px/s — slightly slower for product cards
+    animateMarquee('products-marquee-track', 0.055);
   }
 
   function renderContact(s) {
