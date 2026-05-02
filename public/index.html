@@ -1237,6 +1237,7 @@
     for (let i = 0; i < copies; i++) repeated += html;
     track.innerHTML = repeated;
     const halfPx = services.length * copies * itemW / 2;
+    track.style.animation = '';          // clear any 'none' left from empty-state
     track.style.animationDuration = Math.max(18, Math.round(halfPx / 70)) + 's';
   }
 
@@ -1269,6 +1270,7 @@
     for (let i = 0; i < copies; i++) repeated += html;
     track.innerHTML = repeated;
     const halfPx = products.length * copies * itemW / 2;
+    track.style.animation = '';          // clear any 'none' left from empty-state
     track.style.animationDuration = Math.max(22, Math.round(halfPx / 70)) + 's';
   }
 
