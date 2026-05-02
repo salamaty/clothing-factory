@@ -712,16 +712,24 @@
         <circle cx="90" cy="90" r="84" fill="none"
           stroke="rgba(231,76,60,0.18)" stroke-width="1"/>
 
-        <!-- ===== DRESS — drawn by needle ===== -->
-        <!-- Outline drawn progressively by needle -->
+        <!-- ===== DRESS — stitched by needle ===== -->
+        <!-- Stitch-hole guide: faint dots showing where the needle will pierce -->
+        <path
+          d="M90,22 L68,18 C56,16 46,20 44,28 C42,36 44,44 50,54 C54,62 58,74 60,88 C60,96 58,104 56,112 C48,128 36,146 24,162 L156,162 C144,146 132,128 124,112 C122,104 120,96 120,88 C122,74 126,62 130,54 C136,44 138,36 136,28 C134,20 124,16 112,18 Z"
+          fill="none"
+          stroke="rgba(180,60,60,0.18)"
+          stroke-width="1.5"
+          stroke-dasharray="2 16"
+          stroke-linecap="round"/>
+        <!-- Thread stitches — appear stitch by stitch as needle moves -->
         <path id="wdress"
           d="M90,22 L68,18 C56,16 46,20 44,28 C42,36 44,44 50,54 C54,62 58,74 60,88 C60,96 58,104 56,112 C48,128 36,146 24,162 L156,162 C144,146 132,128 124,112 C122,104 120,96 120,88 C122,74 126,62 130,54 C136,44 138,36 136,28 C134,20 124,16 112,18 Z"
           fill="none"
-          stroke="rgba(231,76,60,0.95)"
-          stroke-width="2.4"
+          stroke="#c0150f"
+          stroke-width="2.8"
           stroke-linecap="round"
           stroke-linejoin="round"
-          stroke-dasharray="580"
+          stroke-dasharray="12 6"
           stroke-dashoffset="580">
           <animate attributeName="stroke-dashoffset"
             values="580;0;0;580"
@@ -924,15 +932,23 @@
         <!-- Glow background -->
         <circle cx="100" cy="115" r="90" fill="url(#svgGlow)"/>
 
-        <!-- Dress outline — drawn by needle -->
+        <!-- Stitch-hole guide: faint dots showing where the needle will pierce -->
+        <path
+          d="M100,28 L76,22 C62,20 50,24 48,34 C46,44 48,56 56,68 C62,78 66,90 66,104 C66,114 64,124 62,134 C52,152 38,172 28,196 L172,196 C162,172 148,152 138,134 C136,124 134,114 134,104 C134,90 138,78 144,68 C152,56 154,44 152,34 C150,24 138,20 124,22 Z"
+          fill="none"
+          stroke="rgba(180,60,60,0.18)"
+          stroke-width="1.8"
+          stroke-dasharray="2 18"
+          stroke-linecap="round"/>
+        <!-- Thread stitches — appear stitch by stitch as needle moves -->
         <path id="dress-outline"
           d="M100,28 L76,22 C62,20 50,24 48,34 C46,44 48,56 56,68 C62,78 66,90 66,104 C66,114 64,124 62,134 C52,152 38,172 28,196 L172,196 C162,172 148,152 138,134 C136,124 134,114 134,104 C134,90 138,78 144,68 C152,56 154,44 152,34 C150,24 138,20 124,22 Z"
           fill="none"
-          stroke="rgba(231,76,60,0.95)"
-          stroke-width="2.5"
+          stroke="#c0150f"
+          stroke-width="3"
           stroke-linecap="round"
           stroke-linejoin="round"
-          stroke-dasharray="680"
+          stroke-dasharray="12 6"
           stroke-dashoffset="680">
           <animate attributeName="stroke-dashoffset"
             values="680;0;0;680"
