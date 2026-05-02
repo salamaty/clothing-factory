@@ -66,27 +66,26 @@
       50%      { transform: translate(-50%,-50%) scale(1.08); opacity:0.5; }
     }
 
-    /* Logo circle */
+    /* Welcome screen logo wrap */
     .w-logo-wrap {
-      position: relative; z-index: 2; margin-bottom: 28px;
-      opacity: 0; animation: scaleIn 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.3s forwards;
+      position: relative; z-index: 2; margin-bottom: 20px;
+      opacity: 0; animation: scaleIn 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.2s forwards;
     }
     @keyframes scaleIn {
       from { opacity:0; transform: scale(0.3); }
       to   { opacity:1; transform: scale(1); }
     }
-    .w-logo-circle {
-      width: 110px; height: 110px; border-radius: 50%;
-      background: linear-gradient(135deg, #e74c3c, #c0392b);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 3.2rem;
-      box-shadow: 0 0 0 4px rgba(231,76,60,0.3),
-                  0 0 40px rgba(231,76,60,0.5),
-                  0 0 80px rgba(231,76,60,0.2);
-      animation: glowPulse 2s ease-in-out 1s infinite alternate;
+
+    /* Welcome sewing SVG animation */
+    .w-sewing-svg {
+      width: 200px; height: 200px;
+      filter: drop-shadow(0 0 28px rgba(231,76,60,0.65))
+              drop-shadow(0 0 60px rgba(231,76,60,0.25));
+      display: block;
     }
+
     .w-logo-img {
-      width: 110px; height: 110px; border-radius: 50%;
+      width: 120px; height: 120px; border-radius: 50%;
       object-fit: cover; display: none;
       box-shadow: 0 0 0 4px rgba(231,76,60,0.4),
                   0 0 40px rgba(231,76,60,0.5);
@@ -582,6 +581,101 @@
       .products-grid { grid-template-columns: 1fr; }
       .product-image, .product-image-placeholder { height: 200px; }
     }
+
+    /* ===== MARQUEE / TICKER STRIP ===== */
+    .marquee-wrapper {
+      overflow: hidden;
+      width: 100%;
+      position: relative;
+      padding: 12px 0;
+      min-height: 160px;
+    }
+    .marquee-wrapper::before,
+    .marquee-wrapper::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 90px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .mq-svc::before  { left:0;  background: linear-gradient(to right, #fff, transparent); }
+    .mq-svc::after   { right:0; background: linear-gradient(to left,  #fff, transparent); }
+    .mq-prod::before { left:0;  background: linear-gradient(to right, #f8f9fa, transparent); }
+    .mq-prod::after  { right:0; background: linear-gradient(to left,  #f8f9fa, transparent); }
+
+    .marquee-track {
+      display: flex;
+      gap: 20px;
+      width: max-content;
+      animation: marquee-ltr 28s linear infinite;
+      padding: 8px 0;
+    }
+    .marquee-track:hover { animation-play-state: paused; }
+
+    @keyframes marquee-ltr {
+      0%   { transform: translateX(-50%); }
+      100% { transform: translateX(0); }
+    }
+
+    /* Service card in marquee */
+    .mqsvc-card {
+      background: white;
+      border-radius: 18px;
+      padding: 26px 20px;
+      text-align: center;
+      min-width: 210px;
+      max-width: 210px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.07);
+      border-bottom: 3px solid var(--accent);
+      flex-shrink: 0;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .mqsvc-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 14px 35px rgba(0,0,0,0.13);
+    }
+    .mqsvc-card .service-icon  { font-size: 2.6rem; margin-bottom: 12px; display: block; }
+    .mqsvc-card .service-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
+    .mqsvc-card .service-desc  { color: #666; font-size: 0.82rem; line-height: 1.6; }
+
+    /* Product card in marquee */
+    .mqprd-card {
+      background: white;
+      border-radius: 18px;
+      overflow: hidden;
+      min-width: 240px;
+      max-width: 240px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+      flex-shrink: 0;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .mqprd-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.14);
+    }
+    .mqprd-card .product-image,
+    .mqprd-card .product-image-placeholder { height: 170px; width: 100%; object-fit: cover; }
+    .mqprd-card .product-image-placeholder { display: flex; align-items: center; justify-content: center; font-size: 3.5rem; background: linear-gradient(135deg,#f0f0f0,#e0e0e0); color:#ccc; }
+    .mqprd-card .product-body  { padding: 14px; }
+    .mqprd-card .product-category { font-size: 0.72rem; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .mqprd-card .product-name  { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+    .mqprd-card .product-desc  { color: #666; font-size: 0.82rem; line-height: 1.55; }
+
+    /* ===== NEEDLE & THREAD SVG ANIMATION ===== */
+    .sewing-svg-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 20px;
+      opacity: 0;
+      animation: fadeInDown 0.8s ease 1.4s forwards;
+    }
+    .sewing-svg {
+      width: 165px;
+      height: 165px;
+      filter: drop-shadow(0 0 18px rgba(231,76,60,0.45));
+    }
   </style>
 </head>
 <body>
@@ -594,15 +688,143 @@
     <div class="w-ring"></div>
     <div class="w-ring"></div>
   </div>
-  <div class="w-deco">✂️</div>
-  <div class="w-deco">🧵</div>
-  <div class="w-deco">👗</div>
-  <div class="w-deco">🪡</div>
-
   <p class="w-welcome">أهلاً وسهلاً بكم</p>
   <div class="w-logo-wrap">
     <img id="w-logo-img" class="w-logo-img" src="" alt="">
-    <div class="w-logo-circle" id="w-logo-icon">👗</div>
+
+    <!-- Needle & Thread draws dress animation — shown when no logo -->
+    <div id="w-logo-icon">
+      <svg class="w-sewing-svg" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="wBg" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"   stop-color="rgba(231,76,60,0.22)"/>
+            <stop offset="100%" stop-color="rgba(231,76,60,0)"/>
+          </radialGradient>
+          <filter id="wNeedle" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="2.5" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- Glow background -->
+        <circle cx="90" cy="90" r="86" fill="url(#wBg)"/>
+        <!-- Subtle outer ring -->
+        <circle cx="90" cy="90" r="84" fill="none"
+          stroke="rgba(231,76,60,0.18)" stroke-width="1"/>
+
+        <!-- ===== DRESS — drawn by needle ===== -->
+        <!-- Dress shape: stroke-dashoffset animates from full → 0 over 3.2s -->
+        <path id="wdress"
+          d="M90,16 L74,38 L72,44 L52,50 L38,98 L28,162 L152,162 L142,98 L128,50 L108,44 L106,38 Z"
+          fill="rgba(231,76,60,0)"
+          stroke="rgba(231,76,60,0.92)"
+          stroke-width="2.4"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-dasharray="600"
+          stroke-dashoffset="600">
+          <animate attributeName="stroke-dashoffset"
+            values="600;0;0;600"
+            keyTimes="0;0.72;0.88;1"
+            dur="3.6s" begin="0.3s" repeatCount="indefinite"/>
+          <!-- Fill appears once outline is drawn -->
+          <animate attributeName="fill"
+            values="rgba(231,76,60,0);rgba(231,76,60,0);rgba(231,76,60,0.09);rgba(231,76,60,0.09);rgba(231,76,60,0)"
+            keyTimes="0;0.65;0.78;0.88;1"
+            dur="3.6s" begin="0.3s" repeatCount="indefinite"/>
+        </path>
+
+        <!-- Neckline curve -->
+        <path d="M72,44 Q90,60 108,44"
+          fill="none" stroke="rgba(231,76,60,0.65)"
+          stroke-width="1.8" stroke-linecap="round"
+          stroke-dasharray="56" stroke-dashoffset="56">
+          <animate attributeName="stroke-dashoffset"
+            values="56;56;0;0;56"
+            keyTimes="0;0.48;0.65;0.88;1"
+            dur="3.6s" begin="0.3s" repeatCount="indefinite"/>
+        </path>
+
+        <!-- Waist stitching (dashed line, appears then pulses) -->
+        <path d="M43,95 Q90,108 137,95"
+          fill="none" stroke="rgba(231,76,60,0.4)"
+          stroke-width="1.4" stroke-dasharray="5,4" opacity="0">
+          <animate attributeName="opacity"
+            values="0;0;0;0.7;0.7;0"
+            keyTimes="0;0.55;0.68;0.75;0.88;1"
+            dur="3.6s" begin="0.3s" repeatCount="indefinite"/>
+          <animate attributeName="stroke-dashoffset"
+            values="0;180" dur="3s" repeatCount="indefinite"/>
+        </path>
+
+        <!-- ===== GOLDEN THREAD TRAIL ===== -->
+        <path d="M90,16 L74,38 L72,44 L52,50 L38,98 L28,162"
+          fill="none" stroke="#f0c040"
+          stroke-width="1.7" stroke-linecap="round"
+          stroke-dasharray="9,5" opacity="0.8">
+          <animate attributeName="stroke-dashoffset"
+            values="0;-280" dur="2.2s" repeatCount="indefinite"/>
+        </path>
+
+        <!-- ===== NEEDLE ===== -->
+        <g filter="url(#wNeedle)">
+          <animateMotion
+            path="M90,16 L74,38 L72,44 L52,50 L38,98 L28,162 L152,162 L142,98 L128,50 L108,44 L106,38 Z"
+            dur="3.6s" begin="0.3s" rotate="auto" repeatCount="indefinite"/>
+          <!-- Body -->
+          <line x1="0" y1="-14" x2="0" y2="4"
+            stroke="#e0e4ee" stroke-width="3.5" stroke-linecap="round"/>
+          <!-- Sharp tip -->
+          <line x1="0" y1="3"   x2="0" y2="8"
+            stroke="#b0b8cc" stroke-width="2"   stroke-linecap="round"/>
+          <!-- Eye -->
+          <ellipse cx="0" cy="-11" rx="2" ry="3"
+            fill="none" stroke="#c0c8d8" stroke-width="1.4"/>
+          <!-- Thread through eye -->
+          <path d="M0,-11 Q-8,-20 -16,-14 Q-22,-8 -17,-3"
+            stroke="#f0c040" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+        </g>
+
+        <!-- ===== SPARKLES ===== -->
+        <!-- Top-left -->
+        <path d="M46,30 L48,37 L55,39 L48,41 L46,48 L44,41 L37,39 L44,37 Z"
+          fill="#f39c12" opacity="0">
+          <animate attributeName="opacity"
+            values="0;0;1;1;0" keyTimes="0;0.1;0.25;0.6;0.8"
+            dur="3.6s" begin="0.3s" repeatCount="indefinite"/>
+        </path>
+        <!-- Top-right -->
+        <path d="M134,28 L136,34 L142,36 L136,38 L134,44 L132,38 L126,36 L132,34 Z"
+          fill="#e74c3c" opacity="0">
+          <animate attributeName="opacity"
+            values="0;0;0;1;1;0" keyTimes="0;0.15;0.3;0.45;0.7;0.9"
+            dur="3.6s" begin="0.3s" repeatCount="indefinite"/>
+        </path>
+        <!-- Bottom-left -->
+        <path d="M30,135 L32,140 L37,142 L32,144 L30,149 L28,144 L23,142 L28,140 Z"
+          fill="#3498db" opacity="0">
+          <animate attributeName="opacity"
+            values="0;0;0;0;1;1;0" keyTimes="0;0.2;0.35;0.5;0.6;0.8;1"
+            dur="3.6s" begin="0.3s" repeatCount="indefinite"/>
+        </path>
+        <!-- Bottom-right -->
+        <path d="M150,130 L152,136 L158,138 L152,140 L150,146 L148,140 L142,138 L148,136 Z"
+          fill="#f39c12" opacity="0">
+          <animate attributeName="opacity"
+            values="0;0;0;0;1;1;0" keyTimes="0;0.25;0.4;0.55;0.65;0.82;1"
+            dur="3.6s" begin="0.3s" repeatCount="indefinite"/>
+        </path>
+        <!-- Centre small dot sparkle -->
+        <circle cx="90" cy="90" r="3" fill="white" opacity="0">
+          <animate attributeName="opacity"
+            values="0;0;0;0;0;0.8;0" keyTimes="0;0.5;0.6;0.68;0.72;0.77;0.88"
+            dur="3.6s" begin="0.3s" repeatCount="indefinite"/>
+          <animate attributeName="r"
+            values="0;0;0;0;0;6;0" keyTimes="0;0.5;0.6;0.68;0.72;0.77;0.88"
+            dur="3.6s" begin="0.3s" repeatCount="indefinite"/>
+        </circle>
+      </svg>
+    </div>
   </div>
   <h1 class="w-name" id="w-factory-name">مصنع الملابس</h1>
   <div class="w-line"></div>
@@ -650,7 +872,92 @@
   <div class="hero-content">
     <div class="hero-badge">🌟 مرحباً بكم</div>
     <img id="hero-logo" class="hero-logo-img" src="" alt="logo">
-    <span id="hero-icon" class="hero-icon">👗🪡🧵</span>
+    <div class="sewing-svg-wrap" id="hero-icon">
+      <svg class="sewing-svg" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="svgGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="rgba(231,76,60,0.18)"/>
+            <stop offset="100%" stop-color="rgba(231,76,60,0)"/>
+          </radialGradient>
+          <filter id="nGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2.5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- Glow background -->
+        <circle cx="100" cy="115" r="90" fill="url(#svgGlow)"/>
+
+        <!-- Dress outline — gets drawn then resets -->
+        <path id="dress-outline"
+          d="M100,28 C100,28 84,50 82,55 L62,60 L46,125 L36,196 L164,196 L154,125 L138,60 L118,55 C116,50 100,28 100,28 Z"
+          fill="rgba(231,76,60,0.07)"
+          stroke="rgba(231,76,60,0.88)"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-dasharray="640"
+          stroke-dashoffset="640">
+          <animate attributeName="stroke-dashoffset"
+            values="640;0;0;640"
+            keyTimes="0;0.65;0.88;1"
+            dur="5s" repeatCount="indefinite"/>
+        </path>
+
+        <!-- Neckline curve -->
+        <path d="M82,55 Q100,72 118,55"
+          fill="none" stroke="rgba(231,76,60,0.55)"
+          stroke-width="2" stroke-dasharray="58" stroke-dashoffset="58">
+          <animate attributeName="stroke-dashoffset"
+            values="58;0;0;58"
+            keyTimes="0;0.3;0.88;1"
+            dur="5s" begin="1.5s" repeatCount="indefinite"/>
+        </path>
+
+        <!-- Waist stitching (dashed moving line) -->
+        <path d="M50,108 Q100,120 150,108"
+          fill="none" stroke="rgba(231,76,60,0.35)"
+          stroke-width="1.5" stroke-dasharray="5,4">
+          <animate attributeName="stroke-dashoffset" values="0;200" dur="3.5s" repeatCount="indefinite"/>
+        </path>
+
+        <!-- Golden thread trail -->
+        <path d="M100,28 C100,28 84,50 82,55 L62,60 L46,125 L36,196"
+          fill="none" stroke="#f0c040" stroke-width="1.8"
+          stroke-linecap="round" stroke-dasharray="10,5" opacity="0.75">
+          <animate attributeName="stroke-dashoffset" values="0;-300" dur="2.5s" repeatCount="indefinite"/>
+        </path>
+
+        <!-- Needle moving along dress path -->
+        <g filter="url(#nGlow)">
+          <animateMotion
+            path="M100,28 C100,28 84,50 82,55 L62,60 L46,125 L36,196 L164,196 L154,125 L138,60 L118,55 C116,50 100,28 100,28 Z"
+            dur="5s" rotate="auto" repeatCount="indefinite"/>
+          <line x1="0" y1="-15" x2="0" y2="4" stroke="#dde" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="0" y1="3"   x2="0" y2="8" stroke="#aab" stroke-width="2"   stroke-linecap="round"/>
+          <ellipse cx="0" cy="-12" rx="2" ry="3" fill="none" stroke="#bbc" stroke-width="1.5"/>
+          <path d="M0,-12 Q-9,-21 -17,-15 Q-23,-9 -19,-4"
+            stroke="#f0c040" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        </g>
+
+        <!-- Sparkle 1 -->
+        <path d="M50,42 L52,48 L58,50 L52,52 L50,58 L48,52 L42,50 L48,48 Z" fill="#f39c12" opacity="0">
+          <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.2;0.7;1" dur="2.5s" begin="0.3s" repeatCount="indefinite"/>
+        </path>
+        <!-- Sparkle 2 -->
+        <path d="M150,38 L152,44 L158,46 L152,48 L150,54 L148,48 L142,46 L148,44 Z" fill="#e74c3c" opacity="0">
+          <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.2;0.7;1" dur="2s" begin="1s" repeatCount="indefinite"/>
+        </path>
+        <!-- Sparkle 3 -->
+        <path d="M35,158 L37,163 L42,165 L37,167 L35,172 L33,167 L28,165 L33,163 Z" fill="#3498db" opacity="0">
+          <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.2;0.7;1" dur="1.8s" begin="1.7s" repeatCount="indefinite"/>
+        </path>
+        <!-- Sparkle 4 -->
+        <path d="M165,158 L167,163 L172,165 L167,167 L165,172 L163,167 L158,165 L163,163 Z" fill="#f39c12" opacity="0">
+          <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.2;0.7;1" dur="2.2s" begin="0.9s" repeatCount="indefinite"/>
+        </path>
+      </svg>
+    </div>
     <h1 class="hero-title" id="hero-title">مصنع <span id="hero-name-span">الملابس</span></h1>
     <p class="hero-subtitle" id="hero-subtitle">نصنع الجودة ونرتقي بالأناقة</p>
     <div class="hero-buttons">
@@ -688,7 +995,9 @@
     <h2 class="section-title">خدماتنا</h2>
     <p class="section-desc">نقدم مجموعة متكاملة من الخدمات لتلبية جميع احتياجاتكم</p>
   </div>
-  <div class="services-grid" id="services-grid"></div>
+  <div class="marquee-wrapper mq-svc">
+    <div class="marquee-track" id="services-marquee-track"></div>
+  </div>
 </section>
 
 <!-- Products Section -->
@@ -698,7 +1007,9 @@
     <h2 class="section-title">منتجاتنا</h2>
     <p class="section-desc">اكتشف تشكيلتنا الواسعة من الملابس عالية الجودة</p>
   </div>
-  <div class="products-grid" id="products-grid"></div>
+  <div class="marquee-wrapper mq-prod">
+    <div class="marquee-track" id="products-marquee-track"></div>
+  </div>
 </section>
 
 <!-- About Section -->
@@ -804,21 +1115,34 @@
   }
 
   function renderServices(services) {
-    const grid = document.getElementById('services-grid');
-    grid.innerHTML = services.map((s, i) => `
-      <div class="service-card" style="transition-delay:${i * 0.1}s">
-        <span class="service-icon">${s.icon}</span>
+    const track = document.getElementById('services-marquee-track');
+    if (!track) return;
+    if (!services || services.length === 0) {
+      track.innerHTML = '<div class="mqsvc-card"><span class="service-icon">⚙️</span><h3 class="service-title">لا توجد خدمات</h3><p class="service-desc">أضف خدماتك من لوحة التحكم</p></div>';
+      track.style.animation = 'none';
+      return;
+    }
+    const html = services.map(s => `
+      <div class="mqsvc-card">
+        <span class="service-icon">${s.icon || '⚙️'}</span>
         <h3 class="service-title">${s.title}</h3>
-        <p class="service-desc">${s.desc}</p>
+        <p class="service-desc">${s.desc || ''}</p>
       </div>
     `).join('');
-    observeCards('.service-card');
+    track.innerHTML = html + html;
+    track.style.animationDuration = Math.max(18, services.length * 4) + 's';
   }
 
   function renderProducts(products) {
-    const grid = document.getElementById('products-grid');
-    grid.innerHTML = products.map((p, i) => `
-      <div class="product-card" style="transition-delay:${i * 0.1}s">
+    const track = document.getElementById('products-marquee-track');
+    if (!track) return;
+    if (!products || products.length === 0) {
+      track.innerHTML = '<div class="mqprd-card"><div class="product-image-placeholder">👕</div><div class="product-body"><h3 class="product-name">لا توجد منتجات</h3><p class="product-desc">أضف منتجاتك من لوحة التحكم</p></div></div>';
+      track.style.animation = 'none';
+      return;
+    }
+    const html = products.map(p => `
+      <div class="mqprd-card">
         ${p.image
           ? `<img src="${p.image}" class="product-image" alt="${p.name}" loading="lazy">`
           : `<div class="product-image-placeholder">👕</div>`}
@@ -829,7 +1153,8 @@
         </div>
       </div>
     `).join('');
-    observeCards('.product-card');
+    track.innerHTML = html + html;
+    track.style.animationDuration = Math.max(22, products.length * 5) + 's';
   }
 
   function renderContact(s) {
