@@ -614,8 +614,8 @@
     .marquee-track:hover { animation-play-state: paused; }
 
     @keyframes marquee-ltr {
-      0%   { transform: translateX(-50%); }
-      100% { transform: translateX(0); }
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
     }
 
     /* Service card in marquee */
@@ -1237,8 +1237,11 @@
     for (let i = 0; i < copies; i++) repeated += html;
     track.innerHTML = repeated;
     const halfPx = services.length * copies * itemW / 2;
-    track.style.animation = '';          // clear any 'none' left from empty-state
-    track.style.animationDuration = Math.max(18, Math.round(halfPx / 70)) + 's';
+    const dur    = Math.max(18, Math.round(halfPx / 70)) + 's';
+    track.style.animation = 'none';        // stop first
+    void track.offsetHeight;               // force reflow → animation restart
+    track.style.animation = '';            // let CSS class take over
+    track.style.animationDuration = dur;
   }
 
   function renderProducts(products) {
@@ -1270,8 +1273,11 @@
     for (let i = 0; i < copies; i++) repeated += html;
     track.innerHTML = repeated;
     const halfPx = products.length * copies * itemW / 2;
-    track.style.animation = '';          // clear any 'none' left from empty-state
-    track.style.animationDuration = Math.max(22, Math.round(halfPx / 70)) + 's';
+    const dur    = Math.max(22, Math.round(halfPx / 70)) + 's';
+    track.style.animation = 'none';        // stop first
+    void track.offsetHeight;               // force reflow → animation restart
+    track.style.animation = '';            // let CSS class take over
+    track.style.animationDuration = dur;
   }
 
   function renderContact(s) {
