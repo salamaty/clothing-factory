@@ -713,11 +713,11 @@
           stroke="rgba(231,76,60,0.18)" stroke-width="1"/>
 
         <!-- ===== DRESS — drawn by needle ===== -->
-        <!-- Dress shape: stroke-dashoffset animates from full → 0 over 3.2s -->
+        <!-- Outline drawn progressively by needle -->
         <path id="wdress"
           d="M90,16 L74,38 L72,44 L52,50 L38,98 L28,162 L152,162 L142,98 L128,50 L108,44 L106,38 Z"
-          fill="rgba(231,76,60,0)"
-          stroke="rgba(231,76,60,0.92)"
+          fill="none"
+          stroke="rgba(231,76,60,0.95)"
           stroke-width="2.4"
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -725,37 +725,74 @@
           stroke-dashoffset="600">
           <animate attributeName="stroke-dashoffset"
             values="600;0;0;600"
-            keyTimes="0;0.72;0.88;1"
-            dur="3.6s" begin="0.3s" repeatCount="indefinite"/>
-          <!-- Fill appears once outline is drawn -->
-          <animate attributeName="fill"
-            values="rgba(231,76,60,0);rgba(231,76,60,0);rgba(231,76,60,0.09);rgba(231,76,60,0.09);rgba(231,76,60,0)"
-            keyTimes="0;0.65;0.78;0.88;1"
-            dur="3.6s" begin="0.3s" repeatCount="indefinite"/>
+            keyTimes="0;0.72;0.90;1"
+            dur="3.8s" begin="0.3s" repeatCount="indefinite"/>
+        </path>
+
+        <!-- ===== SOLID FILL — appears when dress is complete ===== -->
+        <path
+          d="M90,16 L74,38 L72,44 L52,50 L38,98 L28,162 L152,162 L142,98 L128,50 L108,44 L106,38 Z"
+          fill="#c0392b" opacity="0">
+          <animate attributeName="opacity"
+            values="0;0;0;0;0.88;0.88;0.0;0"
+            keyTimes="0;0.1;0.55;0.70;0.78;0.90;0.96;1"
+            dur="3.8s" begin="0.3s" repeatCount="indefinite"/>
         </path>
 
         <!-- Neckline curve -->
         <path d="M72,44 Q90,60 108,44"
-          fill="none" stroke="rgba(231,76,60,0.65)"
-          stroke-width="1.8" stroke-linecap="round"
+          fill="none" stroke="rgba(231,76,60,0.7)"
+          stroke-width="2" stroke-linecap="round"
           stroke-dasharray="56" stroke-dashoffset="56">
           <animate attributeName="stroke-dashoffset"
             values="56;56;0;0;56"
-            keyTimes="0;0.48;0.65;0.88;1"
-            dur="3.6s" begin="0.3s" repeatCount="indefinite"/>
+            keyTimes="0;0.46;0.63;0.90;1"
+            dur="3.8s" begin="0.3s" repeatCount="indefinite"/>
         </path>
 
-        <!-- Waist stitching (dashed line, appears then pulses) -->
-        <path d="M43,95 Q90,108 137,95"
-          fill="none" stroke="rgba(231,76,60,0.4)"
-          stroke-width="1.4" stroke-dasharray="5,4" opacity="0">
+        <!-- ===== DRESS DETAILS — appear at completion ===== -->
+        <g opacity="0">
           <animate attributeName="opacity"
-            values="0;0;0;0.7;0.7;0"
-            keyTimes="0;0.55;0.68;0.75;0.88;1"
-            dur="3.6s" begin="0.3s" repeatCount="indefinite"/>
-          <animate attributeName="stroke-dashoffset"
-            values="0;180" dur="3s" repeatCount="indefinite"/>
-        </path>
+            values="0;0;0;0;1;1;0;0"
+            keyTimes="0;0.1;0.55;0.72;0.80;0.90;0.95;1"
+            dur="3.8s" begin="0.3s" repeatCount="indefinite"/>
+          <!-- Waist belt -->
+          <rect x="43" y="92" width="94" height="7" rx="3.5" fill="rgba(120,0,0,0.55)"/>
+          <!-- Button 1 -->
+          <circle cx="90" cy="70" r="3.2" fill="white" opacity="0.9"/>
+          <circle cx="90" cy="70" r="1.2" fill="#c0392b"/>
+          <!-- Button 2 -->
+          <circle cx="90" cy="83" r="3.2" fill="white" opacity="0.9"/>
+          <circle cx="90" cy="83" r="1.2" fill="#c0392b"/>
+          <!-- Collar stitch -->
+          <path d="M76,47 Q90,57 104,47"
+            fill="none" stroke="rgba(255,255,255,0.4)"
+            stroke-width="1.2" stroke-dasharray="3,2"/>
+          <!-- Skirt fold lines -->
+          <line x1="62" y1="101" x2="52" y2="157" stroke="rgba(100,0,0,0.3)" stroke-width="1.3"/>
+          <line x1="76" y1="101" x2="72" y2="160" stroke="rgba(100,0,0,0.22)" stroke-width="1.3"/>
+          <line x1="104" y1="101" x2="108" y2="160" stroke="rgba(100,0,0,0.22)" stroke-width="1.3"/>
+          <line x1="118" y1="101" x2="128" y2="157" stroke="rgba(100,0,0,0.3)" stroke-width="1.3"/>
+          <!-- Waist moving stitch -->
+          <path d="M44,96 Q90,109 136,96"
+            fill="none" stroke="rgba(255,255,255,0.28)"
+            stroke-width="1.3" stroke-dasharray="4,3">
+            <animate attributeName="stroke-dashoffset"
+              values="0;180" dur="3s" repeatCount="indefinite"/>
+          </path>
+        </g>
+
+        <!-- Completion bloom flash -->
+        <circle cx="90" cy="90" r="0" fill="white" opacity="0">
+          <animate attributeName="r"
+            values="0;0;0;0;0;80;0"
+            keyTimes="0;0.5;0.63;0.68;0.71;0.76;0.85"
+            dur="3.8s" begin="0.3s" repeatCount="indefinite"/>
+          <animate attributeName="opacity"
+            values="0;0;0;0;0;0.38;0"
+            keyTimes="0;0.5;0.63;0.68;0.71;0.76;0.85"
+            dur="3.8s" begin="0.3s" repeatCount="indefinite"/>
+        </circle>
 
         <!-- ===== GOLDEN THREAD TRAIL ===== -->
         <path d="M90,16 L74,38 L72,44 L52,50 L38,98 L28,162"
@@ -888,11 +925,11 @@
         <!-- Glow background -->
         <circle cx="100" cy="115" r="90" fill="url(#svgGlow)"/>
 
-        <!-- Dress outline — gets drawn then resets -->
+        <!-- Dress outline — drawn by needle -->
         <path id="dress-outline"
           d="M100,28 C100,28 84,50 82,55 L62,60 L46,125 L36,196 L164,196 L154,125 L138,60 L118,55 C116,50 100,28 100,28 Z"
-          fill="rgba(231,76,60,0.07)"
-          stroke="rgba(231,76,60,0.88)"
+          fill="none"
+          stroke="rgba(231,76,60,0.95)"
           stroke-width="2.5"
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -900,26 +937,76 @@
           stroke-dashoffset="640">
           <animate attributeName="stroke-dashoffset"
             values="640;0;0;640"
-            keyTimes="0;0.65;0.88;1"
+            keyTimes="0;0.68;0.90;1"
+            dur="5s" repeatCount="indefinite"/>
+        </path>
+
+        <!-- Solid fill — appears when dress is complete -->
+        <path
+          d="M100,28 C100,28 84,50 82,55 L62,60 L46,125 L36,196 L164,196 L154,125 L138,60 L118,55 C116,50 100,28 100,28 Z"
+          fill="#c0392b" opacity="0">
+          <animate attributeName="opacity"
+            values="0;0;0;0;0.88;0.88;0;0"
+            keyTimes="0;0.1;0.55;0.72;0.80;0.90;0.96;1"
             dur="5s" repeatCount="indefinite"/>
         </path>
 
         <!-- Neckline curve -->
         <path d="M82,55 Q100,72 118,55"
-          fill="none" stroke="rgba(231,76,60,0.55)"
+          fill="none" stroke="rgba(231,76,60,0.7)"
           stroke-width="2" stroke-dasharray="58" stroke-dashoffset="58">
           <animate attributeName="stroke-dashoffset"
             values="58;0;0;58"
-            keyTimes="0;0.3;0.88;1"
+            keyTimes="0;0.3;0.90;1"
             dur="5s" begin="1.5s" repeatCount="indefinite"/>
         </path>
 
-        <!-- Waist stitching (dashed moving line) -->
-        <path d="M50,108 Q100,120 150,108"
-          fill="none" stroke="rgba(231,76,60,0.35)"
-          stroke-width="1.5" stroke-dasharray="5,4">
-          <animate attributeName="stroke-dashoffset" values="0;200" dur="3.5s" repeatCount="indefinite"/>
-        </path>
+        <!-- ===== DRESS DETAILS — appear at completion ===== -->
+        <g opacity="0">
+          <animate attributeName="opacity"
+            values="0;0;0;0;1;1;0;0"
+            keyTimes="0;0.1;0.55;0.74;0.82;0.90;0.95;1"
+            dur="5s" repeatCount="indefinite"/>
+          <!-- Waist belt -->
+          <rect x="53" y="118" width="94" height="8" rx="4" fill="rgba(120,0,0,0.55)"/>
+          <!-- Button 1 -->
+          <circle cx="100" cy="84"  r="3.5" fill="white" opacity="0.9"/>
+          <circle cx="100" cy="84"  r="1.3" fill="#c0392b"/>
+          <!-- Button 2 -->
+          <circle cx="100" cy="99"  r="3.5" fill="white" opacity="0.9"/>
+          <circle cx="100" cy="99"  r="1.3" fill="#c0392b"/>
+          <!-- Button 3 -->
+          <circle cx="100" cy="114" r="3.5" fill="white" opacity="0.9"/>
+          <circle cx="100" cy="114" r="1.3" fill="#c0392b"/>
+          <!-- Collar stitch -->
+          <path d="M86,57 Q100,68 114,57"
+            fill="none" stroke="rgba(255,255,255,0.4)"
+            stroke-width="1.4" stroke-dasharray="3,2"/>
+          <!-- Skirt fold lines -->
+          <line x1="72"  y1="128" x2="60"  y2="188" stroke="rgba(100,0,0,0.30)" stroke-width="1.4"/>
+          <line x1="88"  y1="128" x2="84"  y2="193" stroke="rgba(100,0,0,0.22)" stroke-width="1.4"/>
+          <line x1="112" y1="128" x2="116" y2="193" stroke="rgba(100,0,0,0.22)" stroke-width="1.4"/>
+          <line x1="128" y1="128" x2="140" y2="188" stroke="rgba(100,0,0,0.30)" stroke-width="1.4"/>
+          <!-- Waist moving stitch -->
+          <path d="M54,122 Q100,136 146,122"
+            fill="none" stroke="rgba(255,255,255,0.28)"
+            stroke-width="1.4" stroke-dasharray="4,3">
+            <animate attributeName="stroke-dashoffset"
+              values="0;200" dur="3s" repeatCount="indefinite"/>
+          </path>
+        </g>
+
+        <!-- Completion bloom flash -->
+        <circle cx="100" cy="112" r="0" fill="white" opacity="0">
+          <animate attributeName="r"
+            values="0;0;0;0;0;95;0"
+            keyTimes="0;0.5;0.63;0.68;0.70;0.76;0.85"
+            dur="5s" repeatCount="indefinite"/>
+          <animate attributeName="opacity"
+            values="0;0;0;0;0;0.35;0"
+            keyTimes="0;0.5;0.63;0.68;0.70;0.76;0.85"
+            dur="5s" repeatCount="indefinite"/>
+        </circle>
 
         <!-- Golden thread trail -->
         <path d="M100,28 C100,28 84,50 82,55 L62,60 L46,125 L36,196"
