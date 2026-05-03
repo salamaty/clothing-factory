@@ -855,144 +855,60 @@
     <div class="hero-badge">🌟 مرحباً بكم</div>
     <img id="hero-logo" class="hero-logo-img" src="" alt="logo">
     <div class="sewing-svg-wrap" id="hero-icon">
-      <svg class="sewing-svg" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">
+      <svg class="sewing-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <radialGradient id="svgGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="rgba(231,76,60,0.18)"/>
-            <stop offset="100%" stop-color="rgba(231,76,60,0)"/>
+            <stop offset="0%"   stop-color="rgba(236,64,122,0.22)"/>
+            <stop offset="100%" stop-color="rgba(236,64,122,0)"/>
           </radialGradient>
-          <filter id="nGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="2.5" result="blur"/>
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
+          <linearGradient id="hDressFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stop-color="#f8bbd0"/>
+            <stop offset="50%"  stop-color="#ec407a"/>
+            <stop offset="100%" stop-color="#ad1457"/>
+          </linearGradient>
         </defs>
 
         <!-- Glow background -->
-        <circle cx="100" cy="115" r="90" fill="url(#svgGlow)"/>
+        <circle cx="100" cy="100" r="96" fill="url(#svgGlow)"/>
+        <circle cx="100" cy="100" r="94" fill="none"
+          stroke="rgba(236,64,122,0.18)" stroke-width="1"/>
 
-        <!-- Stitch-hole guide: faint dots showing where the needle will pierce -->
-        <path
-          d="M100,28 L76,22 C62,20 50,24 48,34 C46,44 48,56 56,68 C62,78 66,90 66,104 C66,114 64,124 62,134 C52,152 38,172 28,196 L172,196 C162,172 148,152 138,134 C136,124 134,114 134,104 C134,90 138,78 144,68 C152,56 154,44 152,34 C150,24 138,20 124,22 Z"
-          fill="none"
-          stroke="rgba(180,60,60,0.18)"
-          stroke-width="1.8"
-          stroke-dasharray="2 18"
-          stroke-linecap="round"/>
-        <!-- Thread stitches — appear stitch by stitch as needle moves -->
-        <path id="dress-outline"
-          d="M100,28 L76,22 C62,20 50,24 48,34 C46,44 48,56 56,68 C62,78 66,90 66,104 C66,114 64,124 62,134 C52,152 38,172 28,196 L172,196 C162,172 148,152 138,134 C136,124 134,114 134,104 C134,90 138,78 144,68 C152,56 154,44 152,34 C150,24 138,20 124,22 Z"
-          fill="none"
-          stroke="#c0150f"
-          stroke-width="3"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-dasharray="12 6"
-          stroke-dashoffset="680">
-          <animate attributeName="stroke-dashoffset"
-            values="680;0;0;680"
-            keyTimes="0;0.68;0.90;1"
-            dur="5s" repeatCount="indefinite"/>
-        </path>
+        <!-- Pink dress fill (static) -->
+        <path d="M130,38 Q145,32 154,42 Q162,52 158,64 Q152,68 142,68 Q138,82 132,96 Q140,118 156,142 Q172,160 182,178 L18,178 Q28,160 44,142 Q60,118 68,96 Q62,82 58,68 Q48,68 42,64 Q38,52 46,42 Q55,32 70,38 L100,52 L130,38 Z"
+          fill="url(#hDressFill)" opacity="0.96"/>
 
-        <!-- Solid fill — appears when dress is complete -->
-        <path
-          d="M100,28 L76,22 C62,20 50,24 48,34 C46,44 48,56 56,68 C62,78 66,90 66,104 C66,114 64,124 62,134 C52,152 38,172 28,196 L172,196 C162,172 148,152 138,134 C136,124 134,114 134,104 C134,90 138,78 144,68 C152,56 154,44 152,34 C150,24 138,20 124,22 Z"
-          fill="#c0392b" opacity="0">
-          <animate attributeName="opacity"
-            values="0;0;0;0;0.88;0.88;0;0"
-            keyTimes="0;0.1;0.55;0.72;0.80;0.90;0.96;1"
-            dur="5s" repeatCount="indefinite"/>
-        </path>
+        <!-- Stitched outline (static, fully drawn) -->
+        <path d="M130,38 Q145,32 154,42 Q162,52 158,64 Q152,68 142,68 Q138,82 132,96 Q140,118 156,142 Q172,160 182,178 L18,178 Q28,160 44,142 Q60,118 68,96 Q62,82 58,68 Q48,68 42,64 Q38,52 46,42 Q55,32 70,38 L100,52 L130,38 Z"
+          fill="none" stroke="#ad1457" stroke-width="2.4"
+          stroke-linecap="round" stroke-linejoin="round"
+          stroke-dasharray="9 4"/>
 
-        <!-- V-neck highlight -->
-        <path d="M76,22 L100,28 L124,22"
-          fill="none" stroke="rgba(255,180,180,0.22)"
-          stroke-width="1.4" stroke-linecap="round"/>
-
-        <!-- ===== DRESS DETAILS — appear at completion ===== -->
-        <g opacity="0">
-          <animate attributeName="opacity"
-            values="0;0;0;0;1;1;0;0"
-            keyTimes="0;0.1;0.55;0.74;0.82;0.90;0.95;1"
-            dur="5s" repeatCount="indefinite"/>
-          <!-- Waist sash -->
-          <path d="M66,104 Q100,113 134,104" fill="none"
-            stroke="rgba(110,0,0,0.6)" stroke-width="8" stroke-linecap="round"/>
-          <path d="M66,104 Q100,113 134,104" fill="none"
-            stroke="rgba(200,60,60,0.28)" stroke-width="13" stroke-linecap="round"/>
-          <!-- Bow at waist -->
-          <path d="M90,107 C82,97 77,100 85,107 C77,114 82,117 90,107 Z" fill="rgba(130,0,0,0.82)"/>
-          <path d="M110,107 C118,97 123,100 115,107 C123,114 118,117 110,107 Z" fill="rgba(130,0,0,0.82)"/>
-          <ellipse cx="100" cy="107" rx="5" ry="4" fill="rgba(105,0,0,0.92)"/>
-          <ellipse cx="100" cy="107" rx="2.5" ry="2" fill="rgba(210,100,100,0.65)"/>
-          <!-- Neckline jewel trim -->
-          <circle cx="100" cy="28"  r="2.8" fill="rgba(255,218,80,0.95)"/>
-          <circle cx="88"  cy="25"  r="2.2" fill="rgba(255,218,80,0.85)"/>
-          <circle cx="76"  cy="22"  r="2.2" fill="rgba(255,218,80,0.85)"/>
-          <circle cx="112" cy="25"  r="2.2" fill="rgba(255,218,80,0.85)"/>
-          <circle cx="124" cy="22"  r="2.2" fill="rgba(255,218,80,0.85)"/>
-          <!-- Skirt fold lines -->
-          <line x1="70"  y1="128" x2="56"  y2="190" stroke="rgba(100,0,0,0.28)" stroke-width="1.3"/>
-          <line x1="83"  y1="125" x2="77"  y2="193" stroke="rgba(100,0,0,0.20)" stroke-width="1.3"/>
-          <line x1="94"  y1="123" x2="92"  y2="195" stroke="rgba(100,0,0,0.15)" stroke-width="1.3"/>
-          <line x1="106" y1="123" x2="108" y2="195" stroke="rgba(100,0,0,0.15)" stroke-width="1.3"/>
-          <line x1="117" y1="125" x2="123" y2="193" stroke="rgba(100,0,0,0.20)" stroke-width="1.3"/>
-          <line x1="130" y1="128" x2="144" y2="190" stroke="rgba(100,0,0,0.28)" stroke-width="1.3"/>
-          <!-- Moving waist stitch -->
-          <path d="M66,109 Q100,119 134,109" fill="none"
-            stroke="rgba(255,255,255,0.25)" stroke-width="1.4" stroke-dasharray="4,3">
-            <animate attributeName="stroke-dashoffset" values="0;200" dur="3s" repeatCount="indefinite"/>
-          </path>
-        </g>
-
-        <!-- Completion bloom flash -->
-        <circle cx="100" cy="112" r="0" fill="white" opacity="0">
-          <animate attributeName="r"
-            values="0;0;0;0;0;95;0"
-            keyTimes="0;0.5;0.63;0.68;0.70;0.76;0.85"
-            dur="5s" repeatCount="indefinite"/>
-          <animate attributeName="opacity"
-            values="0;0;0;0;0;0.35;0"
-            keyTimes="0;0.5;0.63;0.68;0.70;0.76;0.85"
-            dur="5s" repeatCount="indefinite"/>
-        </circle>
-
-        <!-- Golden thread trail -->
-        <path d="M100,28 L76,22 C62,20 50,24 48,34 C46,44 48,56 56,68 C62,78 66,90 66,104 C66,114 64,124 62,134 C52,152 38,172 28,196"
-          fill="none" stroke="#f0c040" stroke-width="1.8"
-          stroke-linecap="round" stroke-dasharray="10,5" opacity="0.75">
-          <animate attributeName="stroke-dashoffset" values="0;-300" dur="2.5s" repeatCount="indefinite"/>
-        </path>
-
-        <!-- Needle moving along dress path -->
-        <g filter="url(#nGlow)">
-          <animateMotion
-            path="M100,28 L76,22 C62,20 50,24 48,34 C46,44 48,56 56,68 C62,78 66,90 66,104 C66,114 64,124 62,134 C52,152 38,172 28,196 L172,196 C162,172 148,152 138,134 C136,124 134,114 134,104 C134,90 138,78 144,68 C152,56 154,44 152,34 C150,24 138,20 124,22 Z"
-            dur="5s" rotate="auto" repeatCount="indefinite"
-            calcMode="linear" keyPoints="0;1;1" keyTimes="0;0.68;1"/>
-          <line x1="0" y1="-15" x2="0" y2="4" stroke="#dde" stroke-width="3.5" stroke-linecap="round"/>
-          <line x1="0" y1="3"   x2="0" y2="8" stroke="#aab" stroke-width="2"   stroke-linecap="round"/>
-          <ellipse cx="0" cy="-12" rx="2" ry="3" fill="none" stroke="#bbc" stroke-width="1.5"/>
-          <path d="M0,-12 Q-9,-21 -17,-15 Q-23,-9 -19,-4"
-            stroke="#f0c040" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-        </g>
-
-        <!-- Sparkle 1 -->
-        <path d="M50,42 L52,48 L58,50 L52,52 L50,58 L48,52 L42,50 L48,48 Z" fill="#f39c12" opacity="0">
-          <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.2;0.7;1" dur="2.5s" begin="0.3s" repeatCount="indefinite"/>
-        </path>
-        <!-- Sparkle 2 -->
-        <path d="M150,38 L152,44 L158,46 L152,48 L150,54 L148,48 L142,46 L148,44 Z" fill="#e74c3c" opacity="0">
-          <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.2;0.7;1" dur="2s" begin="1s" repeatCount="indefinite"/>
-        </path>
-        <!-- Sparkle 3 -->
-        <path d="M35,158 L37,163 L42,165 L37,167 L35,172 L33,167 L28,165 L33,163 Z" fill="#3498db" opacity="0">
-          <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.2;0.7;1" dur="1.8s" begin="1.7s" repeatCount="indefinite"/>
-        </path>
-        <!-- Sparkle 4 -->
-        <path d="M165,158 L167,163 L172,165 L167,167 L165,172 L163,167 L158,165 L163,163 Z" fill="#f39c12" opacity="0">
-          <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.2;0.7;1" dur="2.2s" begin="0.9s" repeatCount="indefinite"/>
-        </path>
+        <!-- Dress details (static) -->
+        <!-- Waist sash -->
+        <path d="M68,96 Q100,108 132,96" fill="none"
+          stroke="rgba(255,200,220,0.30)" stroke-width="11" stroke-linecap="round"/>
+        <path d="M68,96 Q100,108 132,96" fill="none"
+          stroke="rgba(120,20,80,0.7)" stroke-width="7" stroke-linecap="round"/>
+        <!-- Bow center -->
+        <ellipse cx="100" cy="102" rx="5" ry="4" fill="rgba(120,20,80,0.95)"/>
+        <ellipse cx="100" cy="102" rx="2.5" ry="2" fill="rgba(255,220,140,0.9)"/>
+        <!-- V-neck jewels -->
+        <circle cx="100" cy="52" r="2.4" fill="#fff176"/>
+        <circle cx="92"  cy="46" r="1.6" fill="#fff176" opacity="0.85"/>
+        <circle cx="108" cy="46" r="1.6" fill="#fff176" opacity="0.85"/>
+        <circle cx="84"  cy="40" r="1.4" fill="#fff176" opacity="0.7"/>
+        <circle cx="116" cy="40" r="1.4" fill="#fff176" opacity="0.7"/>
+        <!-- Skirt pleats -->
+        <path d="M70,108 Q60,140 38,176"   stroke="rgba(120,20,80,0.32)" stroke-width="1.2" fill="none"/>
+        <path d="M82,110 Q76,144 68,176"   stroke="rgba(120,20,80,0.22)" stroke-width="1.1" fill="none"/>
+        <path d="M100,112 L100,176"        stroke="rgba(120,20,80,0.18)" stroke-width="1.1" fill="none"/>
+        <path d="M118,110 Q124,144 132,176" stroke="rgba(120,20,80,0.22)" stroke-width="1.1" fill="none"/>
+        <path d="M130,108 Q140,140 162,176" stroke="rgba(120,20,80,0.32)" stroke-width="1.2" fill="none"/>
+        <!-- Highlight shine -->
+        <path d="M92,60 Q88,110 86,176" stroke="rgba(255,230,240,0.30)" stroke-width="3" fill="none"/>
+        <!-- Sparkles -->
+        <path d="M154,42 L156,48 L162,50 L156,52 L154,58 L152,52 L146,50 L152,48 Z" fill="#fff176" opacity="0.9"/>
+        <path d="M46,42 L48,48 L54,50 L48,52 L46,58 L44,52 L38,50 L44,48 Z" fill="#fff176" opacity="0.9"/>
       </svg>
     </div>
     <h1 class="hero-title" id="hero-title">مصنع <span id="hero-name-span">الملابس</span></h1>
@@ -1340,7 +1256,7 @@
   }
 
   // Animate progress bar then hide welcome screen
-  function runWelcomeSequence(duration = 2200) {
+  function runWelcomeSequence(duration = 3000) {
     const bar = document.getElementById('w-progress');
     const start = performance.now();
     function step(now) {
