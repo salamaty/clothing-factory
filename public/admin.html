@@ -357,6 +357,8 @@
     <div class="nav-item" data-page="terms"><span class="icon">📜</span><span>شروط العقود</span></div>
     <div class="nav-section-label">العملاء</div>
     <div class="nav-item" data-page="orders"><span class="icon">📋</span><span>الحجوزات والعقود</span></div>
+    <div class="nav-section-label">الأمان</div>
+    <div class="nav-item" data-page="security"><span class="icon">🔐</span><span>كلمة السر</span></div>
   </nav>
   <div class="sidebar-footer">
     <a href="/" target="_blank" class="view-site-btn">
@@ -564,6 +566,34 @@
           <input type="text" class="form-control" id="c-address" placeholder="المدينة، الحي، الشارع">
         </div>
         <button class="btn btn-success" onclick="saveContact()">💾 حفظ بيانات التواصل</button>
+      </div>
+    </div>
+
+    <!-- SECURITY PAGE -->
+    <div class="page" id="page-security">
+      <div class="card" style="max-width:520px;">
+        <div class="card-header">
+          <div class="card-title">🔐 تغيير كلمة السر</div>
+        </div>
+        <p style="color:#888;font-size:0.85rem;margin-bottom:18px;">
+          غيّر كلمة سر لوحة التحكم. كل الجلسات الأخرى هتنتهي تلقائياً بعد التغيير.
+        </p>
+        <form id="change-password-form" onsubmit="return changePassword(event)">
+          <div class="form-group">
+            <label class="form-label">كلمة السر الحالية</label>
+            <input type="password" class="form-control" id="cp-old" required autocomplete="current-password">
+          </div>
+          <div class="form-group">
+            <label class="form-label">كلمة السر الجديدة</label>
+            <input type="password" class="form-control" id="cp-new" required minlength="8" autocomplete="new-password" placeholder="8 أحرف على الأقل">
+          </div>
+          <div class="form-group">
+            <label class="form-label">تأكيد كلمة السر الجديدة</label>
+            <input type="password" class="form-control" id="cp-confirm" required minlength="8" autocomplete="new-password">
+          </div>
+          <div id="cp-error" style="color:#e74c3c;font-size:0.88rem;margin-bottom:12px;min-height:1em;"></div>
+          <button type="submit" class="btn btn-success">💾 حفظ كلمة السر الجديدة</button>
+        </form>
       </div>
     </div>
 
@@ -814,6 +844,35 @@
     showLogin();
   }
   window.logout = logout;
+
+  async function changePassword(e) {
+    e.preventDefault();
+    const oldP = document.getElementById('cp-old').value;
+    const newP = document.getElementById('cp-new').value;
+    const conf = document.getElementById('cp-confirm').value;
+    const err  = document.getElementById('cp-error');
+    err.textContent = '';
+    if (newP !== conf) { err.textContent = 'تأكيد كلمة السر مش مطابق'; return false; }
+    if (newP.length < 8) { err.textContent = 'لازم 8 أحرف على الأقل'; return false; }
+    try {
+      const res = await fetch('/api/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldPassword: oldP, newPassword: newP })
+      });
+      const j = await res.json();
+      if (res.ok && j.success) {
+        showToast('تم تغيير كلمة السر بنجاح ✅');
+        document.getElementById('change-password-form').reset();
+      } else {
+        err.textContent = j.error || 'حدث خطأ';
+      }
+    } catch (ex) {
+      err.textContent = 'خطأ في الاتصال';
+    }
+    return false;
+  }
+  window.changePassword = changePassword;
 
   // ===== MOBILE SIDEBAR =====
   const sidebar = document.querySelector('.sidebar');

@@ -60,6 +60,40 @@ const loginLimiter = rateLimit({
 
 // ============ AUTH ============
 const sessions = new Map(); // token -> expiresAt
+const AUTH_FILE = path.join(DATA_DIR, 'auth.json');
+
+// Hash & verify (scrypt is built-in, no deps)
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(password, salt, 64).toString('hex');
+  return `${salt}:${hash}`;
+}
+function verifyPassword(password, stored) {
+  if (!stored || !stored.includes(':')) return false;
+  const [salt, hash] = stored.split(':');
+  const test = crypto.scryptSync(password, salt, 64).toString('hex');
+  // Constant-time comparison
+  const a = Buffer.from(hash, 'hex'), b = Buffer.from(test, 'hex');
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+// Get current password (from auth.json if exists, else hash the env var)
+function getStoredPasswordHash() {
+  if (fs.existsSync(AUTH_FILE)) {
+    try { return JSON.parse(fs.readFileSync(AUTH_FILE, 'utf8')).hash; }
+    catch (e) { return null; }
+  }
+  return null;
+}
+function setStoredPasswordHash(newHash) {
+  atomicWrite(AUTH_FILE, { hash: newHash, updatedAt: new Date().toISOString() });
+}
+function checkPassword(plain) {
+  const stored = getStoredPasswordHash();
+  if (stored) return verifyPassword(plain, stored);
+  // First-time: compare against env var directly
+  return plain === ADMIN_PASSWORD;
+}
 
 function createSession() {
   const token = crypto.randomBytes(32).toString('hex');
@@ -219,7 +253,7 @@ function deleteUploadedFile(urlPath) {
 // ============ AUTH ROUTES ============
 app.post('/api/login', loginLimiter, (req, res) => {
   const { password } = req.body || {};
-  if (typeof password !== 'string' || password !== ADMIN_PASSWORD) {
+  if (typeof password !== 'string' || !checkPassword(password)) {
     return res.status(401).json({ error: 'كلمة سر خاطئة' });
   }
   const token = createSession();
@@ -229,6 +263,28 @@ app.post('/api/login', loginLimiter, (req, res) => {
     secure: process.env.NODE_ENV === 'production',
     maxAge: SESSION_TTL,
   });
+  res.json({ success: true });
+});
+
+// Change password (requires being logged in + correct old password)
+app.post('/api/change-password', requireAuth, loginLimiter, (req, res) => {
+  const { oldPassword, newPassword } = req.body || {};
+  if (typeof oldPassword !== 'string' || typeof newPassword !== 'string') {
+    return res.status(400).json({ error: 'بيانات ناقصة' });
+  }
+  if (!checkPassword(oldPassword)) {
+    return res.status(401).json({ error: 'كلمة السر القديمة غير صحيحة' });
+  }
+  if (newPassword.length < 8) {
+    return res.status(400).json({ error: 'كلمة السر الجديدة لازم تكون 8 أحرف على الأقل' });
+  }
+  if (newPassword.length > 128) {
+    return res.status(400).json({ error: 'كلمة السر طويلة جداً' });
+  }
+  setStoredPasswordHash(hashPassword(newPassword));
+  // Invalidate ALL existing sessions except the current one
+  const currentToken = req.cookies[COOKIE_NAME];
+  for (const t of sessions.keys()) if (t !== currentToken) sessions.delete(t);
   res.json({ success: true });
 });
 
