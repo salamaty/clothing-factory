@@ -40,6 +40,7 @@ if (legacyData !== DATA_DIR && fs.existsSync(legacyData)) {
 }
 
 // ============ MIDDLEWARE ============
+app.set('trust proxy', 1); // Railway sits behind a proxy
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
