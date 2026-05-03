@@ -41,6 +41,16 @@ if (legacyData !== DATA_DIR && fs.existsSync(legacyData)) {
 
 // ============ MIDDLEWARE ============
 app.set('trust proxy', 1); // Railway sits behind a proxy
+app.disable('x-powered-by');
+app.use((req, res, next) => {
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  next();
+});
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
@@ -203,7 +213,12 @@ function loadSettings() {
     return DEFAULT_SETTINGS;
   }
   try {
-    return JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
+    const s = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
+    // Backfill any missing fields from defaults (handles upgrades)
+    for (const k of Object.keys(DEFAULT_SETTINGS)) {
+      if (s[k] === undefined) s[k] = DEFAULT_SETTINGS[k];
+    }
+    return s;
   } catch (e) {
     console.error('Settings file corrupt, restoring defaults');
     atomicWrite(SETTINGS_FILE, DEFAULT_SETTINGS);
