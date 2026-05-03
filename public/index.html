@@ -582,20 +582,23 @@
       .product-image, .product-image-placeholder { height: 200px; }
     }
 
-    /* ===== MARQUEE / TICKER STRIP ===== */
+    /* ===== MARQUEE / TICKER STRIP (rebuilt — two-track CSS pattern) ===== */
     .marquee-wrapper {
       overflow: hidden;
       width: 100%;
       position: relative;
-      padding: 12px 0;
-      min-height: 160px;
+      padding: 20px 0;
+      min-height: 220px;
+      display: flex;
+      gap: 20px;
+      align-items: stretch;
     }
     .marquee-wrapper::before,
     .marquee-wrapper::after {
       content: '';
       position: absolute;
       top: 0; bottom: 0;
-      width: 90px;
+      width: 80px;
       z-index: 2;
       pointer-events: none;
     }
@@ -607,9 +610,18 @@
     .marquee-track {
       display: flex;
       gap: 20px;
-      width: max-content;
-      padding: 8px 0;
+      flex-shrink: 0;
+      min-width: max-content;
+      animation: marquee-scroll 40s linear infinite;
+      will-change: transform;
     }
+    .marquee-wrapper:hover .marquee-track { animation-play-state: paused; }
+    @keyframes marquee-scroll {
+      from { transform: translateX(0); }
+      to   { transform: translateX(calc(-100% - 20px)); }
+    }
+    /* RTL safety: keep tracks flowing in same direction regardless of page dir */
+    .marquee-wrapper { direction: ltr; }
 
     /* Service card in marquee */
     .mqsvc-card {
@@ -1087,8 +1099,9 @@
     <h2 class="section-title">خدماتنا</h2>
     <p class="section-desc">نقدم مجموعة متكاملة من الخدمات لتلبية جميع احتياجاتكم</p>
   </div>
-  <div class="marquee-wrapper mq-svc">
-    <div class="marquee-track" id="services-marquee-track"></div>
+  <div class="marquee-wrapper mq-svc" id="services-marquee">
+    <div class="marquee-track" data-track="services"></div>
+    <div class="marquee-track" data-track="services" aria-hidden="true"></div>
   </div>
 </section>
 
@@ -1099,8 +1112,9 @@
     <h2 class="section-title">منتجاتنا</h2>
     <p class="section-desc">اكتشف تشكيلتنا الواسعة من الملابس عالية الجودة</p>
   </div>
-  <div class="marquee-wrapper mq-prod">
-    <div class="marquee-track" id="products-marquee-track"></div>
+  <div class="marquee-wrapper mq-prod" id="products-marquee">
+    <div class="marquee-track" data-track="products"></div>
+    <div class="marquee-track" data-track="products" aria-hidden="true"></div>
   </div>
 </section>
 
@@ -1206,60 +1220,54 @@
     document.getElementById('footer-year').textContent = new Date().getFullYear();
   }
 
-  // ── Marquee engine (pure rAF — no CSS animation) ──────────────────────
-  // resetAt = exact px to shift before looping (calculated from item math,
-  // NOT from scrollWidth which can race against layout on mobile).
-  const _mq = {};
+  // ── Marquee engine (pure CSS — two identical tracks side-by-side) ─────
+  // The CSS keyframe shifts each track left by exactly its own width + the
+  // gap (20px). Because both tracks are identical and share the same
+  // animation, when track-A scrolls completely off the left, track-B is
+  // already in its starting place — perfect seamless loop, no JS timing.
 
-  function animateMarquee(trackId, speed, resetAt) {
-    if (_mq[trackId] != null) { cancelAnimationFrame(_mq[trackId]); _mq[trackId] = null; }
-    const track = document.getElementById(trackId);
-    if (!track || !track.children.length || resetAt <= 0) return;
+  const SVC_CARD_W = 210, PRD_CARD_W = 240, GAP = 20;
 
-    let x = 0, prevT = null, paused = false;
+  function fillTracks(wrapperId, dataKey, html, itemCount, cardWidth) {
+    const wrapper = document.getElementById(wrapperId);
+    if (!wrapper) return;
+    const tracks = wrapper.querySelectorAll('[data-track="' + dataKey + '"]');
 
-    // Pause on hover (desktop)
-    track.addEventListener('mouseenter', () => { paused = true; });
-    track.addEventListener('mouseleave', () => { paused = false; prevT = null; });
-
-    function step(t) {
-      if (!paused) {
-        if (prevT !== null) {
-          x -= speed * (t - prevT);    // move left (negative = left)
-          while (x <= -resetAt) x += resetAt;  // seamless reset, never blank
-        }
-        prevT = t;
-        track.style.transform = 'translateX(' + Math.round(x) + 'px)';
-      } else {
-        prevT = null;
-      }
-      _mq[trackId] = requestAnimationFrame(step);
-    }
-    _mq[trackId] = requestAnimationFrame(step);
-  }
-
-  // Spacing = card width + gap (flex gap:20px between every card incl. between copies)
-  const SVC_SPACING = 230;   // service card 210px + 20px gap
-  const PRD_SPACING = 260;   // product  card 240px + 20px gap
-
-  function mqCopies(itemCount, spacing) {
+    // To keep each track wider than the viewport (so something is always
+    // on screen during the loop) we may need to repeat the items inside
+    // each track. Each track must independently be >= viewport width.
     const vw = window.innerWidth || 1280;
-    // ×4 guarantees (copies/2)*items*spacing >= vw → no gap ever
-    let c = Math.max(4, Math.ceil((vw * 4) / (itemCount * spacing)));
-    return c % 2 === 0 ? c : c + 1;   // must be even for seamless half-reset
+    const oneSetWidth = itemCount * (cardWidth + GAP);
+    const repeats = Math.max(1, Math.ceil(vw / oneSetWidth));
+    let oneTrack = '';
+    for (let i = 0; i < repeats; i++) oneTrack += html;
+
+    tracks.forEach(t => {
+      t.style.animation = 'none';        // reset animation
+      t.innerHTML = oneTrack;
+    });
+
+    // Force reflow then re-apply animation with duration scaled to content
+    // Speed: ~80px/sec → duration in seconds = trackWidth / 80
+    const trackPxWidth = repeats * oneSetWidth;
+    const duration = Math.max(20, Math.round(trackPxWidth / 80));
+    void wrapper.offsetHeight;
+    tracks.forEach(t => {
+      t.style.animation = 'marquee-scroll ' + duration + 's linear infinite';
+    });
   }
 
   function renderServices(services) {
-    const track = document.getElementById('services-marquee-track');
-    if (!track) return;
-    track.style.transform = '';
-    if (_mq['services-marquee-track'] != null) {
-      cancelAnimationFrame(_mq['services-marquee-track']);
-      _mq['services-marquee-track'] = null;
-    }
+    window._lastServices = services;
+    const wrapper = document.getElementById('services-marquee');
+    if (!wrapper) return;
 
     if (!services || services.length === 0) {
-      track.innerHTML = '<div class="mqsvc-card"><span class="service-icon">⚙️</span><h3 class="service-title">لا توجد خدمات</h3><p class="service-desc">أضف خدماتك من لوحة التحكم</p></div>';
+      const empty = '<div class="mqsvc-card"><span class="service-icon">⚙️</span><h3 class="service-title">لا توجد خدمات</h3><p class="service-desc">أضف خدماتك من لوحة التحكم</p></div>';
+      wrapper.querySelectorAll('[data-track="services"]').forEach(t => {
+        t.style.animation = 'none';
+        t.innerHTML = empty;
+      });
       return;
     }
 
@@ -1270,26 +1278,20 @@
         <p class="service-desc">${s.desc || ''}</p>
       </div>`).join('');
 
-    const copies  = mqCopies(services.length, SVC_SPACING);
-    const resetAt = (copies / 2) * services.length * SVC_SPACING;
-    let out = '';
-    for (let i = 0; i < copies; i++) out += html;
-    track.innerHTML = out;
-
-    animateMarquee('services-marquee-track', 0.07, resetAt);
+    fillTracks('services-marquee', 'services', html, services.length, SVC_CARD_W);
   }
 
   function renderProducts(products) {
-    const track = document.getElementById('products-marquee-track');
-    if (!track) return;
-    track.style.transform = '';
-    if (_mq['products-marquee-track'] != null) {
-      cancelAnimationFrame(_mq['products-marquee-track']);
-      _mq['products-marquee-track'] = null;
-    }
+    window._lastProducts = products;
+    const wrapper = document.getElementById('products-marquee');
+    if (!wrapper) return;
 
     if (!products || products.length === 0) {
-      track.innerHTML = '<div class="mqprd-card"><div class="product-image-placeholder">👕</div><div class="product-body"><h3 class="product-name">لا توجد منتجات</h3><p class="product-desc">أضف منتجاتك من لوحة التحكم</p></div></div>';
+      const empty = '<div class="mqprd-card"><div class="product-image-placeholder">👕</div><div class="product-body"><h3 class="product-name">لا توجد منتجات</h3><p class="product-desc">أضف منتجاتك من لوحة التحكم</p></div></div>';
+      wrapper.querySelectorAll('[data-track="products"]').forEach(t => {
+        t.style.animation = 'none';
+        t.innerHTML = empty;
+      });
       return;
     }
 
@@ -1305,14 +1307,18 @@
         </div>
       </div>`).join('');
 
-    const copies  = mqCopies(products.length, PRD_SPACING);
-    const resetAt = (copies / 2) * products.length * PRD_SPACING;
-    let out = '';
-    for (let i = 0; i < copies; i++) out += html;
-    track.innerHTML = out;
-
-    animateMarquee('products-marquee-track', 0.055, resetAt);
+    fillTracks('products-marquee', 'products', html, products.length, PRD_CARD_W);
   }
+
+  // Re-fill on resize so each track stays >= viewport width
+  let _mqResizeT = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(_mqResizeT);
+    _mqResizeT = setTimeout(() => {
+      if (window._lastServices) renderServices(window._lastServices);
+      if (window._lastProducts) renderProducts(window._lastProducts);
+    }, 250);
+  });
 
   function renderContact(s) {
     let html = '';
