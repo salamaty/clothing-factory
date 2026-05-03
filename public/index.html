@@ -702,18 +702,13 @@
       <svg class="w-sewing-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <radialGradient id="wBg" cx="50%" cy="50%" r="50%">
-            <stop offset="0%"   stop-color="rgba(231,76,60,0.22)"/>
-            <stop offset="100%" stop-color="rgba(231,76,60,0)"/>
+            <stop offset="0%"   stop-color="rgba(236,64,122,0.22)"/>
+            <stop offset="100%" stop-color="rgba(236,64,122,0)"/>
           </radialGradient>
           <linearGradient id="wDressFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"   stop-color="#e74c3c"/>
-            <stop offset="55%"  stop-color="#c0392b"/>
-            <stop offset="100%" stop-color="#7d1313"/>
-          </linearGradient>
-          <linearGradient id="wDressShine" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%"   stop-color="rgba(255,255,255,0)"/>
-            <stop offset="50%"  stop-color="rgba(255,255,255,0.18)"/>
-            <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+            <stop offset="0%"   stop-color="#f8bbd0"/>
+            <stop offset="50%"  stop-color="#ec407a"/>
+            <stop offset="100%" stop-color="#ad1457"/>
           </linearGradient>
           <filter id="wNeedle" x="-60%" y="-60%" width="220%" height="220%">
             <feGaussianBlur stdDeviation="1.8" result="b"/>
@@ -724,78 +719,73 @@
         <!-- Glow background -->
         <circle cx="100" cy="100" r="96" fill="url(#wBg)"/>
         <circle cx="100" cy="100" r="94" fill="none"
-          stroke="rgba(231,76,60,0.18)" stroke-width="1"/>
+          stroke="rgba(236,64,122,0.18)" stroke-width="1"/>
 
         <!-- Faint stitch-hole guide -->
         <path d="M130,38 Q145,32 154,42 Q162,52 158,64 Q152,68 142,68 Q138,82 132,96 Q140,118 156,142 Q172,160 182,178 L18,178 Q28,160 44,142 Q60,118 68,96 Q62,82 58,68 Q48,68 42,64 Q38,52 46,42 Q55,32 70,38 L100,52 L130,38 Z"
-          fill="none" stroke="rgba(180,60,60,0.18)"
+          fill="none" stroke="rgba(236,64,122,0.18)"
           stroke-width="1.4" stroke-dasharray="2 10"/>
 
-        <!-- ===== SOLID FILLED DRESS — appears as needle finishes ===== -->
+        <!-- ===== SOLID FILLED DRESS — appears as needle finishes & STAYS ===== -->
         <path d="M130,38 Q145,32 154,42 Q162,52 158,64 Q152,68 142,68 Q138,82 132,96 Q140,118 156,142 Q172,160 182,178 L18,178 Q28,160 44,142 Q60,118 68,96 Q62,82 58,68 Q48,68 42,64 Q38,52 46,42 Q55,32 70,38 L100,52 L130,38 Z"
           fill="url(#wDressFill)" opacity="0">
           <animate attributeName="opacity"
-            values="0;0;0.94;0.94;0"
-            keyTimes="0;0.80;0.88;0.95;1"
-            dur="2.4s" begin="0.2s" repeatCount="indefinite"/>
+            values="0;0;0.96"
+            keyTimes="0;0.80;0.92"
+            dur="2.4s" begin="0.2s" fill="freeze"/>
         </path>
 
-        <!-- ===== STITCHED OUTLINE (drawn by needle) ===== -->
+        <!-- ===== STITCHED OUTLINE (drawn by needle once, stays) ===== -->
         <path id="wdress"
           d="M130,38 Q145,32 154,42 Q162,52 158,64 Q152,68 142,68 Q138,82 132,96 Q140,118 156,142 Q172,160 182,178 L18,178 Q28,160 44,142 Q60,118 68,96 Q62,82 58,68 Q48,68 42,64 Q38,52 46,42 Q55,32 70,38 L100,52 L130,38 Z"
-          fill="none" stroke="#7d1313" stroke-width="2.4"
+          fill="none" stroke="#ad1457" stroke-width="2.4"
           stroke-linecap="round" stroke-linejoin="round"
           stroke-dasharray="9 4" stroke-dashoffset="700"
           pathLength="700">
           <animate attributeName="stroke-dashoffset"
-            values="700;0;0;700"
-            keyTimes="0;0.78;0.92;1"
-            dur="2.4s" begin="0.2s" repeatCount="indefinite"/>
+            values="700;0"
+            keyTimes="0;1"
+            dur="2s" begin="0.2s" fill="freeze"/>
         </path>
 
-        <!-- ===== DRESS DETAILS (waist sash, bow, jewels, folds) ===== -->
+        <!-- ===== DRESS DETAILS — appear when finished and STAY ===== -->
         <g opacity="0">
           <animate attributeName="opacity"
-            values="0;0;1;1;0"
-            keyTimes="0;0.82;0.88;0.95;1"
-            dur="2.4s" begin="0.2s" repeatCount="indefinite"/>
+            values="0;0;1"
+            keyTimes="0;0.82;0.92"
+            dur="2.4s" begin="0.2s" fill="freeze"/>
           <!-- Waist sash -->
           <path d="M68,96 Q100,108 132,96" fill="none"
-            stroke="rgba(70,0,0,0.65)" stroke-width="7" stroke-linecap="round"/>
+            stroke="rgba(120,20,80,0.7)" stroke-width="7" stroke-linecap="round"/>
           <path d="M68,96 Q100,108 132,96" fill="none"
-            stroke="rgba(255,160,160,0.20)" stroke-width="11" stroke-linecap="round"/>
+            stroke="rgba(255,200,220,0.30)" stroke-width="11" stroke-linecap="round"/>
           <!-- Bow center -->
-          <ellipse cx="100" cy="102" rx="5" ry="4" fill="rgba(60,0,0,0.95)"/>
-          <ellipse cx="100" cy="102" rx="2.5" ry="2" fill="rgba(255,200,80,0.85)"/>
+          <ellipse cx="100" cy="102" rx="5" ry="4" fill="rgba(120,20,80,0.95)"/>
+          <ellipse cx="100" cy="102" rx="2.5" ry="2" fill="rgba(255,220,140,0.9)"/>
           <!-- V-neck jewels -->
-          <circle cx="100" cy="52" r="2.4" fill="#f5d042"/>
-          <circle cx="92"  cy="46" r="1.6" fill="#f5d042" opacity="0.85"/>
-          <circle cx="108" cy="46" r="1.6" fill="#f5d042" opacity="0.85"/>
-          <circle cx="84"  cy="40" r="1.4" fill="#f5d042" opacity="0.7"/>
-          <circle cx="116" cy="40" r="1.4" fill="#f5d042" opacity="0.7"/>
+          <circle cx="100" cy="52" r="2.4" fill="#fff176"/>
+          <circle cx="92"  cy="46" r="1.6" fill="#fff176" opacity="0.85"/>
+          <circle cx="108" cy="46" r="1.6" fill="#fff176" opacity="0.85"/>
+          <circle cx="84"  cy="40" r="1.4" fill="#fff176" opacity="0.7"/>
+          <circle cx="116" cy="40" r="1.4" fill="#fff176" opacity="0.7"/>
           <!-- Skirt pleats -->
-          <path d="M70,108 Q60,140 38,176" stroke="rgba(50,0,0,0.30)" stroke-width="1.2" fill="none"/>
-          <path d="M82,110 Q76,144 68,176" stroke="rgba(50,0,0,0.22)" stroke-width="1.1" fill="none"/>
-          <path d="M100,112 L100,176"      stroke="rgba(50,0,0,0.18)" stroke-width="1.1" fill="none"/>
-          <path d="M118,110 Q124,144 132,176" stroke="rgba(50,0,0,0.22)" stroke-width="1.1" fill="none"/>
-          <path d="M130,108 Q140,140 162,176" stroke="rgba(50,0,0,0.30)" stroke-width="1.2" fill="none"/>
+          <path d="M70,108 Q60,140 38,176"   stroke="rgba(120,20,80,0.32)" stroke-width="1.2" fill="none"/>
+          <path d="M82,110 Q76,144 68,176"   stroke="rgba(120,20,80,0.22)" stroke-width="1.1" fill="none"/>
+          <path d="M100,112 L100,176"        stroke="rgba(120,20,80,0.18)" stroke-width="1.1" fill="none"/>
+          <path d="M118,110 Q124,144 132,176" stroke="rgba(120,20,80,0.22)" stroke-width="1.1" fill="none"/>
+          <path d="M130,108 Q140,140 162,176" stroke="rgba(120,20,80,0.32)" stroke-width="1.2" fill="none"/>
           <!-- Highlight shine running down -->
-          <path d="M92,60 Q88,110 86,176" stroke="rgba(255,210,210,0.18)" stroke-width="3" fill="none"/>
+          <path d="M92,60 Q88,110 86,176" stroke="rgba(255,230,240,0.30)" stroke-width="3" fill="none"/>
         </g>
 
-        <!-- ===== GOLDEN THREAD TRAIL (follows needle) ===== -->
-        <path d="M130,38 Q145,32 154,42 Q162,52 158,64 Q152,68 142,68 Q138,82 132,96 Q140,118 156,142 Q172,160 182,178"
-          fill="none" stroke="#f0c040" stroke-width="1.4"
-          stroke-linecap="round" stroke-dasharray="6 4" opacity="0.75">
-          <animate attributeName="stroke-dashoffset"
-            values="0;-200" dur="1.6s" repeatCount="indefinite"/>
-        </path>
-
-        <!-- ===== NEEDLE — clockwise from top-right, sweeps right→left along hem ===== -->
+        <!-- ===== NEEDLE — runs once, then disappears ===== -->
         <g filter="url(#wNeedle)">
-          <animateMotion dur="2.4s" begin="0.2s" rotate="auto" repeatCount="indefinite"
-            calcMode="linear" keyPoints="0;1;1" keyTimes="0;0.78;1"
+          <animateMotion dur="2s" begin="0.2s" rotate="auto" fill="freeze"
             path="M130,38 Q145,32 154,42 Q162,52 158,64 Q152,68 142,68 Q138,82 132,96 Q140,118 156,142 Q172,160 182,178 L18,178 Q28,160 44,142 Q60,118 68,96 Q62,82 58,68 Q48,68 42,64 Q38,52 46,42 Q55,32 70,38 L100,52 L130,38 Z"/>
+          <animate attributeName="opacity"
+            values="1;1;0"
+            keyTimes="0;0.85;1"
+            dur="2.4s" begin="0.2s" fill="freeze"/>
           <line x1="0" y1="-13" x2="0" y2="5"
             stroke="#e0e4ee" stroke-width="3" stroke-linecap="round"/>
           <line x1="0" y1="4" x2="0" y2="9"
@@ -803,18 +793,17 @@
           <ellipse cx="0" cy="-10" rx="2" ry="3"
             fill="none" stroke="#c0c8d8" stroke-width="1.3"/>
           <path d="M0,-10 Q-8,-19 -16,-13 Q-22,-7 -17,-2"
-            stroke="#f0c040" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+            stroke="#fff176" stroke-width="1.6" fill="none" stroke-linecap="round"/>
         </g>
 
-        <!-- Completion sparkles -->
+        <!-- Completion sparkles — flash once and stay subtle -->
         <g opacity="0">
           <animate attributeName="opacity"
-            values="0;0;1;0"
-            keyTimes="0;0.85;0.92;1"
-            dur="2.4s" begin="0.2s" repeatCount="indefinite"/>
-          <circle cx="100" cy="100" r="4" fill="white" opacity="0.7"/>
-          <path d="M154,42 L156,48 L162,50 L156,52 L154,58 L152,52 L146,50 L152,48 Z" fill="#f5d042"/>
-          <path d="M46,42 L48,48 L54,50 L48,52 L46,58 L44,52 L38,50 L44,48 Z" fill="#f5d042"/>
+            values="0;0;1"
+            keyTimes="0;0.85;0.95"
+            dur="2.4s" begin="0.2s" fill="freeze"/>
+          <path d="M154,42 L156,48 L162,50 L156,52 L154,58 L152,52 L146,50 L152,48 Z" fill="#fff176" opacity="0.9"/>
+          <path d="M46,42 L48,48 L54,50 L48,52 L46,58 L44,52 L38,50 L44,48 Z" fill="#fff176" opacity="0.9"/>
         </g>
       </svg>
     </div>
