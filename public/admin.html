@@ -508,12 +508,39 @@
     <!-- ORDERS PAGE -->
     <div class="page" id="page-orders">
       <div class="stats-row" id="orders-stats"></div>
+
+      <!-- Tabs: All vs Today -->
+      <div class="card" style="padding:6px;margin-bottom:14px;">
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-ghost orders-tab active" data-tab="all"   style="flex:1;font-weight:700;" onclick="switchOrdersTab('all')">📋 كل الحجوزات</button>
+          <button class="btn btn-ghost orders-tab"        data-tab="today" style="flex:1;font-weight:700;" onclick="switchOrdersTab('today')">📅 حجوزات اليوم (<span id="today-count">0</span>)</button>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-header">
-          <div class="card-title">📋 الحجوزات والعقود (<span id="orders-count">0</span>)</div>
+          <div class="card-title"><span id="orders-tab-title">📋 كل الحجوزات</span> (<span id="orders-count">0</span>)</div>
           <button class="btn btn-success btn-sm" onclick="openOrderModal()">➕ حجز جديد</button>
         </div>
-        <!-- Filter bar -->
+
+        <!-- Search + date filter (only visible on All tab) -->
+        <div id="orders-search-bar" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end;">
+          <div style="flex:1;min-width:200px;">
+            <label class="form-label" style="font-size:0.78rem;">🔍 البحث باسم العميل</label>
+            <input type="text" class="form-control" id="search-name" placeholder="اكتب اسم العميل..." oninput="renderOrdersList()">
+          </div>
+          <div style="min-width:150px;">
+            <label class="form-label" style="font-size:0.78rem;">📅 من تاريخ</label>
+            <input type="date" class="form-control" id="search-from" onchange="renderOrdersList()">
+          </div>
+          <div style="min-width:150px;">
+            <label class="form-label" style="font-size:0.78rem;">📅 إلى تاريخ</label>
+            <input type="date" class="form-control" id="search-to" onchange="renderOrdersList()">
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="clearOrdersFilters()" style="height:42px;">🗑️ مسح الفلاتر</button>
+        </div>
+
+        <!-- Status filter pills -->
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;">
           <button class="btn btn-ghost btn-sm order-filter active" data-status="all">الكل</button>
           <button class="btn btn-ghost btn-sm order-filter" data-status="pending">⏳ معلق</button>
@@ -521,6 +548,7 @@
           <button class="btn btn-ghost btn-sm order-filter" data-status="completed">✅ مكتمل</button>
           <button class="btn btn-ghost btn-sm order-filter" data-status="cancelled">❌ ملغي</button>
         </div>
+
         <div class="items-list" id="orders-list">
           <p style="text-align:center;color:#aaa;padding:30px;">لا توجد حجوزات بعد</p>
         </div>
@@ -1179,7 +1207,7 @@
     const res = await fetch('/api/orders');
     orders = await res.json();
     renderOrdersStats();
-    renderOrdersList();
+    switchOrdersTab(currentOrdersTab); // apply active tab styling + render
   }
 
   function renderOrdersStats() {
@@ -1198,12 +1226,82 @@
         <div><div class="stat-card-num">${done}</div><div class="stat-card-label">مكتمل</div></div></div>`;
   }
 
+  // Tab state: 'all' or 'today'
+  let currentOrdersTab = 'all';
+
+  function isToday(dateStr) {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    const t = new Date();
+    return d.getFullYear() === t.getFullYear() &&
+           d.getMonth() === t.getMonth() &&
+           d.getDate() === t.getDate();
+  }
+
+  function switchOrdersTab(tab) {
+    currentOrdersTab = tab;
+    document.querySelectorAll('.orders-tab').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === tab);
+      b.style.background = b.dataset.tab === tab ? 'var(--accent)' : '';
+      b.style.color      = b.dataset.tab === tab ? 'white' : '';
+    });
+    document.getElementById('orders-tab-title').textContent =
+      tab === 'today' ? '📅 حجوزات اليوم' : '📋 كل الحجوزات';
+    // Hide search bar on Today tab (today is always today)
+    document.getElementById('orders-search-bar').style.display = tab === 'today' ? 'none' : 'flex';
+    renderOrdersList();
+  }
+  window.switchOrdersTab = switchOrdersTab;
+
+  function clearOrdersFilters() {
+    document.getElementById('search-name').value = '';
+    document.getElementById('search-from').value = '';
+    document.getElementById('search-to').value = '';
+    renderOrdersList();
+  }
+  window.clearOrdersFilters = clearOrdersFilters;
+
   function renderOrdersList() {
-    document.getElementById('orders-count').textContent = orders.length;
-    const filtered = currentFilter === 'all' ? orders : orders.filter(o => o.status === currentFilter);
+    // Update today-count badge always
+    const todayCount = orders.filter(o => isToday(o.createdAt)).length;
+    const todayCountEl = document.getElementById('today-count');
+    if (todayCountEl) todayCountEl.textContent = todayCount;
+
+    let filtered = orders;
+
+    // Tab filter
+    if (currentOrdersTab === 'today') {
+      filtered = filtered.filter(o => isToday(o.createdAt));
+    } else {
+      // Search filters (only on "all" tab)
+      const nameQ = (document.getElementById('search-name')?.value || '').trim().toLowerCase();
+      const fromD = document.getElementById('search-from')?.value;
+      const toD   = document.getElementById('search-to')?.value;
+      if (nameQ) {
+        filtered = filtered.filter(o => (o.clientName || '').toLowerCase().includes(nameQ));
+      }
+      if (fromD) {
+        const fromTs = new Date(fromD).setHours(0,0,0,0);
+        filtered = filtered.filter(o => new Date(o.createdAt).getTime() >= fromTs);
+      }
+      if (toD) {
+        const toTs = new Date(toD).setHours(23,59,59,999);
+        filtered = filtered.filter(o => new Date(o.createdAt).getTime() <= toTs);
+      }
+    }
+
+    // Status filter
+    if (currentFilter !== 'all') {
+      filtered = filtered.filter(o => o.status === currentFilter);
+    }
+
+    document.getElementById('orders-count').textContent = filtered.length;
     const list = document.getElementById('orders-list');
     if (!filtered.length) {
-      list.innerHTML = '<p style="text-align:center;color:#aaa;padding:30px;">لا توجد حجوزات في هذا التصنيف</p>';
+      const msg = currentOrdersTab === 'today'
+        ? 'مفيش حجوزات اليوم'
+        : 'مفيش حجوزات مطابقة للفلتر';
+      list.innerHTML = `<p style="text-align:center;color:#aaa;padding:30px;">${msg}</p>`;
       return;
     }
     list.innerHTML = filtered.map(o => {
