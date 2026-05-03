@@ -730,8 +730,8 @@
         <path d="M130,38 Q145,32 154,42 Q162,52 158,64 Q152,68 142,68 Q138,82 132,96 Q140,118 156,142 Q172,160 182,178 L18,178 Q28,160 44,142 Q60,118 68,96 Q62,82 58,68 Q48,68 42,64 Q38,52 46,42 Q55,32 70,38 L100,52 L130,38 Z"
           fill="url(#wDressFill)" opacity="0">
           <animate attributeName="opacity"
-            values="0;0;0.96"
-            keyTimes="0;0.80;0.92"
+            values="0;0;0.96;0.96"
+            keyTimes="0;0.80;0.92;1"
             dur="2.4s" begin="0.2s" fill="freeze"/>
         </path>
 
@@ -743,16 +743,15 @@
           stroke-dasharray="9 4" stroke-dashoffset="700"
           pathLength="700">
           <animate attributeName="stroke-dashoffset"
-            values="700;0"
-            keyTimes="0;1"
+            from="700" to="0"
             dur="2s" begin="0.2s" fill="freeze"/>
         </path>
 
         <!-- ===== DRESS DETAILS — appear when finished and STAY ===== -->
         <g opacity="0">
           <animate attributeName="opacity"
-            values="0;0;1"
-            keyTimes="0;0.82;0.92"
+            values="0;0;1;1"
+            keyTimes="0;0.82;0.92;1"
             dur="2.4s" begin="0.2s" fill="freeze"/>
           <!-- Waist sash -->
           <path d="M68,96 Q100,108 132,96" fill="none"
@@ -799,8 +798,8 @@
         <!-- Completion sparkles — flash once and stay subtle -->
         <g opacity="0">
           <animate attributeName="opacity"
-            values="0;0;1"
-            keyTimes="0;0.85;0.95"
+            values="0;0;1;1"
+            keyTimes="0;0.85;0.95;1"
             dur="2.4s" begin="0.2s" fill="freeze"/>
           <path d="M154,42 L156,48 L162,50 L156,52 L154,58 L152,52 L146,50 L152,48 Z" fill="#fff176" opacity="0.9"/>
           <path d="M46,42 L48,48 L54,50 L48,52 L46,58 L44,52 L38,50 L44,48 Z" fill="#fff176" opacity="0.9"/>
