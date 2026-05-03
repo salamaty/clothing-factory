@@ -389,9 +389,13 @@
     const id = location.pathname.split('/').pop();
     try {
       const [orderRes, settingsRes] = await Promise.all([
-        fetch(`/api/orders/${id}`),
-        fetch('/api/settings')
+        fetch(`/api/orders/${id}`, { credentials: 'include' }),
+        fetch('/api/settings',    { credentials: 'include' })
       ]);
+      if (orderRes.status === 401) {
+        document.body.innerHTML = '<div style="padding:60px;text-align:center;font-family:Cairo,sans-serif;"><h2>🔒 غير مصرح</h2><p style="margin-top:14px;color:#666;">سجل الدخول من <a href="/admin">لوحة التحكم</a> أولاً</p></div>';
+        return;
+      }
       const order    = await orderRes.json();
       const settings = await settingsRes.json();
       render(order, settings);

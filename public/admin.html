@@ -316,6 +316,22 @@
 </head>
 <body>
 
+<!-- Login Overlay -->
+<div id="login-overlay" style="position:fixed;inset:0;background:linear-gradient(135deg,#1a1a2e,#16213e);z-index:9999;display:none;align-items:center;justify-content:center;">
+  <form id="login-form" style="background:white;padding:40px 36px;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,0.4);width:340px;max-width:90vw;">
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="width:64px;height:64px;background:#e74c3c;border-radius:18px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:white;">🔒</div>
+      <h2 style="font-size:1.4rem;color:#1a1a2e;margin-bottom:6px;">تسجيل الدخول</h2>
+      <p style="color:#888;font-size:0.85rem;">أدخل كلمة السر للوصول للوحة التحكم</p>
+    </div>
+    <input id="login-password" type="password" placeholder="كلمة السر" required
+      style="width:100%;padding:14px 16px;border:2px solid #e8ecf0;border-radius:10px;font-family:inherit;font-size:1rem;outline:none;text-align:center;letter-spacing:2px;direction:ltr;"
+      autocomplete="current-password">
+    <div id="login-error" style="color:#e74c3c;font-size:0.85rem;text-align:center;margin-top:10px;min-height:1em;"></div>
+    <button type="submit" style="width:100%;margin-top:16px;padding:14px;background:#e74c3c;color:white;border:none;border-radius:10px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">دخول</button>
+  </form>
+</div>
+
 <!-- Toast Container -->
 <div id="toast-container"></div>
 
@@ -346,6 +362,9 @@
     <a href="/" target="_blank" class="view-site-btn">
       <span>🌐</span> <span>عرض الموقع</span>
     </a>
+    <button onclick="logout()" class="view-site-btn" style="width:100%;margin-top:10px;background:rgba(231,76,60,0.18);color:#ffb3ad;border:none;cursor:pointer;font-family:inherit;">
+      <span>🚪</span> <span>تسجيل خروج</span>
+    </button>
   </div>
 </aside>
 
@@ -739,6 +758,62 @@
   let products = [];
   let services = [];
   let pendingProductImageUrl = '';
+
+  // ===== AUTH HELPERS =====
+  // Wrap fetch so EVERY request sends cookies, and any 401 shows the login overlay
+  const _fetch = window.fetch.bind(window);
+  window.fetch = async function(url, opts = {}) {
+    opts.credentials = 'include';
+    const res = await _fetch(url, opts);
+    if (res.status === 401) {
+      try {
+        const j = await res.clone().json();
+        if (j && j.requireLogin) showLogin();
+      } catch (e) { showLogin(); }
+    }
+    return res;
+  };
+
+  function showLogin() {
+    document.getElementById('login-overlay').style.display = 'flex';
+    setTimeout(() => document.getElementById('login-password').focus(), 50);
+  }
+  function hideLogin() {
+    document.getElementById('login-overlay').style.display = 'none';
+    document.getElementById('login-password').value = '';
+    document.getElementById('login-error').textContent = '';
+  }
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const pwd = document.getElementById('login-password').value;
+    const errEl = document.getElementById('login-error');
+    errEl.textContent = '';
+    try {
+      const res = await _fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ password: pwd })
+      });
+      const j = await res.json();
+      if (res.ok && j.success) {
+        hideLogin();
+        await loadAll();
+        if (typeof loadOrders === 'function') await loadOrders();
+      } else {
+        errEl.textContent = j.error || 'كلمة سر خاطئة';
+      }
+    } catch (err) {
+      errEl.textContent = 'خطأ في الاتصال';
+    }
+  });
+
+  async function logout() {
+    await _fetch('/api/logout', { method: 'POST', credentials: 'include' });
+    showLogin();
+  }
+  window.logout = logout;
 
   // ===== MOBILE SIDEBAR =====
   const sidebar = document.querySelector('.sidebar');
@@ -1270,9 +1345,21 @@
     else showToast('حدث خطأ', 'error');
   }
 
-  // Init
-  loadAll();
-  loadOrders();
+  // Init — check auth first; only load data if logged in
+  (async function init() {
+    try {
+      const r = await _fetch('/api/me', { credentials: 'include' });
+      const j = await r.json();
+      if (j.authenticated) {
+        await loadAll();
+        await loadOrders();
+      } else {
+        showLogin();
+      }
+    } catch (e) {
+      showLogin();
+    }
+  })();
 </script>
 </body>
 </html>

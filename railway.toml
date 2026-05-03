@@ -4,3 +4,12 @@ builder = "nixpacks"
 [deploy]
 startCommand = "node server.js"
 restartPolicyType = "on_failure"
+
+# NOTE: Persistent volume must be created from the Railway dashboard:
+#   1. Service → Settings → Volumes → New Volume
+#   2. Mount path: /data
+#   3. Set environment variables in Railway dashboard:
+#      - DATA_DIR=/data
+#      - UPLOADS_DIR=/data/uploads
+#      - ADMIN_PASSWORD=<your-strong-password>
+#      - NODE_ENV=production

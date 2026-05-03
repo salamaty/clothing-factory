@@ -3,22 +3,132 @@ const multer = require('multer');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
+const cookieParser = require('cookie-parser');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.static('public'));
-app.use('/uploads', express.static('uploads'));
+// ============ CONFIG ============
+// Persistent storage paths (override via env on Railway with mounted volume)
+const DATA_DIR    = process.env.DATA_DIR    || path.join(__dirname, 'data');
+const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(DATA_DIR, 'uploads');
+const BACKUP_DIR  = path.join(DATA_DIR, 'backups');
 
-// Ensure directories exist
-['uploads', 'data'].forEach(dir => {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+// Admin password — MUST be overridden via env on production
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const SESSION_TTL    = 24 * 60 * 60 * 1000; // 24h
+const COOKIE_NAME    = 'cf_session';
+
+// Ensure dirs
+[DATA_DIR, UPLOADS_DIR, BACKUP_DIR].forEach(d => {
+  if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
 });
 
-// Default settings
+// One-time migration: copy old ./data into DATA_DIR if DATA_DIR is empty
+const legacyData = path.join(__dirname, 'data');
+if (legacyData !== DATA_DIR && fs.existsSync(legacyData)) {
+  ['settings.json', 'orders.json'].forEach(f => {
+    const src = path.join(legacyData, f);
+    const dst = path.join(DATA_DIR, f);
+    if (fs.existsSync(src) && !fs.existsSync(dst)) {
+      fs.copyFileSync(src, dst);
+      console.log(`📦 Migrated ${f} → ${DATA_DIR}`);
+    }
+  });
+}
+
+// ============ MIDDLEWARE ============
+app.use(cors({ origin: true, credentials: true }));
+app.use(express.json({ limit: '1mb' }));
+app.use(cookieParser());
+app.use(express.static('public'));
+app.use('/uploads', express.static(UPLOADS_DIR));
+
+// Rate limits
+const writeLimiter = rateLimit({
+  windowMs: 60 * 1000, max: 60,
+  message: { error: 'الحد الأقصى للطلبات تم تجاوزه، حاول بعد دقيقة' },
+  standardHeaders: true, legacyHeaders: false,
+});
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, max: 8,
+  message: { error: 'محاولات دخول كتيرة، حاول بعد 15 دقيقة' },
+  standardHeaders: true, legacyHeaders: false,
+});
+
+// ============ AUTH ============
+const sessions = new Map(); // token -> expiresAt
+
+function createSession() {
+  const token = crypto.randomBytes(32).toString('hex');
+  sessions.set(token, Date.now() + SESSION_TTL);
+  return token;
+}
+function isValidSession(token) {
+  if (!token) return false;
+  const exp = sessions.get(token);
+  if (!exp) return false;
+  if (exp < Date.now()) { sessions.delete(token); return false; }
+  return true;
+}
+function requireAuth(req, res, next) {
+  if (isValidSession(req.cookies[COOKIE_NAME])) return next();
+  res.status(401).json({ error: 'غير مصرح', requireLogin: true });
+}
+
+// Cleanup expired sessions hourly
+setInterval(() => {
+  const now = Date.now();
+  for (const [t, exp] of sessions) if (exp < now) sessions.delete(t);
+}, 60 * 60 * 1000);
+
+// ============ INPUT SANITIZATION ============
+function sanitizeStr(s, maxLen = 500) {
+  if (typeof s !== 'string') return '';
+  return s
+    .replace(/<script[^>]*>.*?<\/script>/gi, '')
+    .replace(/<[^>]+>/g, '')               // strip HTML tags
+    .replace(/javascript:/gi, '')           // strip js: protocol
+    .slice(0, maxLen);
+}
+function sanitizeObj(obj, fields) {
+  const out = {};
+  for (const [k, max] of Object.entries(fields)) {
+    if (obj[k] !== undefined) out[k] = sanitizeStr(obj[k], max);
+  }
+  return out;
+}
+
+// ============ FILE I/O (atomic + backup) ============
+function backupFile(filePath) {
+  if (!fs.existsSync(filePath)) return;
+  const name = path.basename(filePath);
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const dst = path.join(BACKUP_DIR, `${name}.${stamp}.bak`);
+  try { fs.copyFileSync(filePath, dst); } catch (e) { console.error('Backup failed:', e.message); }
+  // Keep only last 20 backups per file
+  try {
+    const all = fs.readdirSync(BACKUP_DIR)
+      .filter(f => f.startsWith(name + '.'))
+      .sort();
+    while (all.length > 20) {
+      fs.unlinkSync(path.join(BACKUP_DIR, all.shift()));
+    }
+  } catch (e) {}
+}
+function atomicWrite(filePath, jsonData) {
+  backupFile(filePath);
+  const tmp = filePath + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(jsonData, null, 2));
+  fs.renameSync(tmp, filePath);
+}
+
+// ============ SETTINGS ============
+const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
+const ORDERS_FILE   = path.join(DATA_DIR, 'orders.json');
+
 const DEFAULT_SETTINGS = {
   factoryName: "مصنع الملابس",
   welcomeMessage: "مرحباً بكم في مصنعنا",
@@ -27,34 +137,17 @@ const DEFAULT_SETTINGS = {
   contactPhone: "",
   contactEmail: "",
   contactAddress: "",
+  contactWhatsapp: "",
   about: "نحن مصنع متخصص في صناعة الملابس بأعلى معايير الجودة",
   products: [
-    {
-      id: 1,
-      name: "قمصان رجالية",
-      description: "قمصان بأقمشة فاخرة وخياطة محكمة",
-      image: "",
-      category: "رجالي"
-    },
-    {
-      id: 2,
-      name: "فساتين نسائية",
-      description: "تصميمات عصرية تجمع بين الأناقة والراحة",
-      image: "",
-      category: "نسائي"
-    },
-    {
-      id: 3,
-      name: "ملابس أطفال",
-      description: "ملابس ملونة وآمنة لأطفالنا الصغار",
-      image: "",
-      category: "أطفال"
-    }
+    { id: 1, name: "قمصان رجالية", description: "قمصان بأقمشة فاخرة وخياطة محكمة", image: "", category: "رجالي" },
+    { id: 2, name: "فساتين نسائية", description: "تصميمات عصرية تجمع بين الأناقة والراحة", image: "", category: "نسائي" },
+    { id: 3, name: "ملابس أطفال",   description: "ملابس ملونة وآمنة لأطفالنا الصغار",  image: "", category: "أطفال" }
   ],
   services: [
     { id: 1, title: "تصنيع بالجملة", icon: "🏭", desc: "إنتاج كميات كبيرة بأسعار تنافسية" },
-    { id: 2, title: "تصميم مخصص", icon: "✂️", desc: "تصميم حسب طلب العميل وذوقه" },
-    { id: 3, title: "توصيل سريع", icon: "🚚", desc: "نوصل لجميع أنحاء المملكة" }
+    { id: 2, title: "تصميم مخصص",   icon: "✂️", desc: "تصميم حسب طلب العميل وذوقه" },
+    { id: 3, title: "توصيل سريع",   icon: "🚚", desc: "نوصل لجميع أنحاء المملكة" }
   ],
   primaryColor: "#2c3e50",
   accentColor: "#e74c3c",
@@ -69,171 +162,195 @@ const DEFAULT_SETTINGS = {
   ]
 };
 
-// Load settings
 function loadSettings() {
-  const settingsPath = 'data/settings.json';
-  if (!fs.existsSync(settingsPath)) {
-    fs.writeFileSync(settingsPath, JSON.stringify(DEFAULT_SETTINGS, null, 2));
+  if (!fs.existsSync(SETTINGS_FILE)) {
+    atomicWrite(SETTINGS_FILE, DEFAULT_SETTINGS);
     return DEFAULT_SETTINGS;
   }
-  return JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+  try {
+    return JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
+  } catch (e) {
+    console.error('Settings file corrupt, restoring defaults');
+    atomicWrite(SETTINGS_FILE, DEFAULT_SETTINGS);
+    return DEFAULT_SETTINGS;
+  }
 }
-
-// Save settings
 function saveSettings(data) {
   data.lastUpdated = Date.now();
-  fs.writeFileSync('data/settings.json', JSON.stringify(data, null, 2));
+  atomicWrite(SETTINGS_FILE, data);
 }
-
-// Lightweight version check endpoint
-app.get('/api/version', (req, res) => {
-  const s = loadSettings();
-  res.json({ lastUpdated: s.lastUpdated || 0 });
-});
-
-// Multer config for image uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, Date.now() + ext);
-  }
-});
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
-
-// ============ API Routes ============
-
-// Get all settings (public)
-app.get('/api/settings', (req, res) => {
-  res.json(loadSettings());
-});
-
-// Update general settings
-app.post('/api/settings', (req, res) => {
-  const settings = loadSettings();
-  const allowed = ['factoryName', 'welcomeMessage', 'welcomeSubMessage', 'contactPhone',
-    'contactEmail', 'contactAddress', 'contactWhatsapp', 'about', 'primaryColor', 'accentColor', 'heroBackground', 'terms'];
-  allowed.forEach(key => {
-    if (req.body[key] !== undefined) settings[key] = req.body[key];
-  });
-  saveSettings(settings);
-  res.json({ success: true, settings });
-});
-
-// Upload logo
-app.post('/api/upload-logo', upload.single('logo'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'لم يتم رفع أي ملف' });
-  const settings = loadSettings();
-  settings.logoUrl = `/uploads/${req.file.filename}`;
-  saveSettings(settings);
-  res.json({ success: true, logoUrl: settings.logoUrl });
-});
-
-// Upload product image
-app.post('/api/upload-product-image', upload.single('image'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'لم يتم رفع أي ملف' });
-  res.json({ success: true, imageUrl: `/uploads/${req.file.filename}` });
-});
-
-// Get products
-app.get('/api/products', (req, res) => {
-  res.json(loadSettings().products);
-});
-
-// Add product
-app.post('/api/products', (req, res) => {
-  const settings = loadSettings();
-  const newProduct = {
-    id: Date.now(),
-    name: req.body.name || 'منتج جديد',
-    description: req.body.description || '',
-    image: req.body.image || '',
-    category: req.body.category || 'عام'
-  };
-  settings.products.push(newProduct);
-  saveSettings(settings);
-  res.json({ success: true, product: newProduct });
-});
-
-// Update product
-app.put('/api/products/:id', (req, res) => {
-  const settings = loadSettings();
-  const idx = settings.products.findIndex(p => p.id == req.params.id);
-  if (idx === -1) return res.status(404).json({ error: 'المنتج غير موجود' });
-  settings.products[idx] = { ...settings.products[idx], ...req.body, id: settings.products[idx].id };
-  saveSettings(settings);
-  res.json({ success: true, product: settings.products[idx] });
-});
-
-// Delete product
-app.delete('/api/products/:id', (req, res) => {
-  const settings = loadSettings();
-  settings.products = settings.products.filter(p => p.id != req.params.id);
-  saveSettings(settings);
-  res.json({ success: true });
-});
-
-// Get services
-app.get('/api/services', (req, res) => {
-  res.json(loadSettings().services);
-});
-
-// Add service
-app.post('/api/services', (req, res) => {
-  const settings = loadSettings();
-  const newService = {
-    id: Date.now(),
-    title: req.body.title || 'خدمة جديدة',
-    icon: req.body.icon || '⭐',
-    desc: req.body.desc || ''
-  };
-  settings.services.push(newService);
-  saveSettings(settings);
-  res.json({ success: true, service: newService });
-});
-
-// Update service
-app.put('/api/services/:id', (req, res) => {
-  const settings = loadSettings();
-  const idx = settings.services.findIndex(s => s.id == req.params.id);
-  if (idx === -1) return res.status(404).json({ error: 'الخدمة غير موجودة' });
-  settings.services[idx] = { ...settings.services[idx], ...req.body, id: settings.services[idx].id };
-  saveSettings(settings);
-  res.json({ success: true });
-});
-
-// Delete service
-app.delete('/api/services/:id', (req, res) => {
-  const settings = loadSettings();
-  settings.services = settings.services.filter(s => s.id != req.params.id);
-  saveSettings(settings);
-  res.json({ success: true });
-});
-
-// ============ ORDERS API ============
-
 function loadOrders() {
-  const p = 'data/orders.json';
-  if (!fs.existsSync(p)) { fs.writeFileSync(p, '[]'); return []; }
-  return JSON.parse(fs.readFileSync(p, 'utf8'));
+  if (!fs.existsSync(ORDERS_FILE)) { atomicWrite(ORDERS_FILE, []); return []; }
+  try { return JSON.parse(fs.readFileSync(ORDERS_FILE, 'utf8')); }
+  catch (e) { console.error('Orders file corrupt, restoring empty'); atomicWrite(ORDERS_FILE, []); return []; }
 }
-function saveOrders(orders) {
-  fs.writeFileSync('data/orders.json', JSON.stringify(orders, null, 2));
-}
+function saveOrders(orders) { atomicWrite(ORDERS_FILE, orders); }
 function nextContractNumber(orders) {
   const year = new Date().getFullYear();
   const count = orders.filter(o => String(o.contractNumber || '').startsWith(String(year))).length + 1;
   return `${year}-${String(count).padStart(3, '0')}`;
 }
 
-app.get('/api/orders', (req, res) => res.json(loadOrders()));
+// ============ MULTER ============
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, UPLOADS_DIR),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase().slice(0, 8);
+    cb(null, Date.now() + '-' + crypto.randomBytes(4).toString('hex') + ext);
+  }
+});
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const ok = /^image\/(jpeg|jpg|png|gif|webp|svg\+xml)$/i.test(file.mimetype);
+    cb(ok ? null : new Error('نوع الملف غير مدعوم'), ok);
+  }
+});
 
-app.get('/api/orders/:id', (req, res) => {
+function deleteUploadedFile(urlPath) {
+  if (!urlPath || !urlPath.startsWith('/uploads/')) return;
+  const file = path.join(UPLOADS_DIR, path.basename(urlPath));
+  if (fs.existsSync(file)) {
+    try { fs.unlinkSync(file); } catch (e) {}
+  }
+}
+
+// ============ AUTH ROUTES ============
+app.post('/api/login', loginLimiter, (req, res) => {
+  const { password } = req.body || {};
+  if (typeof password !== 'string' || password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'كلمة سر خاطئة' });
+  }
+  const token = createSession();
+  res.cookie(COOKIE_NAME, token, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: SESSION_TTL,
+  });
+  res.json({ success: true });
+});
+
+app.post('/api/logout', (req, res) => {
+  const t = req.cookies[COOKIE_NAME];
+  if (t) sessions.delete(t);
+  res.clearCookie(COOKIE_NAME);
+  res.json({ success: true });
+});
+
+app.get('/api/me', (req, res) => {
+  res.json({ authenticated: isValidSession(req.cookies[COOKIE_NAME]) });
+});
+
+// ============ PUBLIC API ============
+app.get('/api/version', (req, res) => {
+  res.json({ lastUpdated: loadSettings().lastUpdated || 0 });
+});
+app.get('/api/settings', (req, res) => res.json(loadSettings()));
+app.get('/api/products', (req, res) => res.json(loadSettings().products));
+app.get('/api/services', (req, res) => res.json(loadSettings().services));
+
+// ============ PROTECTED API ============
+const protect = [requireAuth, writeLimiter];
+
+app.post('/api/settings', protect, (req, res) => {
+  const settings = loadSettings();
+  const stringFields = {
+    factoryName: 100, welcomeMessage: 200, welcomeSubMessage: 200,
+    contactPhone: 30, contactEmail: 100, contactAddress: 200, contactWhatsapp: 30,
+    about: 2000, primaryColor: 20, accentColor: 20, heroBackground: 20,
+  };
+  Object.assign(settings, sanitizeObj(req.body, stringFields));
+  if (Array.isArray(req.body.terms)) {
+    settings.terms = req.body.terms.slice(0, 30).map(t => sanitizeStr(t, 500));
+  }
+  saveSettings(settings);
+  res.json({ success: true, settings });
+});
+
+app.post('/api/upload-logo', protect, upload.single('logo'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'لم يتم رفع أي ملف' });
+  const settings = loadSettings();
+  deleteUploadedFile(settings.logoUrl); // cleanup old logo
+  settings.logoUrl = `/uploads/${req.file.filename}`;
+  saveSettings(settings);
+  res.json({ success: true, logoUrl: settings.logoUrl });
+});
+
+app.post('/api/upload-product-image', protect, upload.single('image'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'لم يتم رفع أي ملف' });
+  res.json({ success: true, imageUrl: `/uploads/${req.file.filename}` });
+});
+
+// PRODUCTS
+app.post('/api/products', protect, (req, res) => {
+  const settings = loadSettings();
+  const newProduct = {
+    id: Date.now(),
+    name: sanitizeStr(req.body.name, 100) || 'منتج جديد',
+    description: sanitizeStr(req.body.description, 500),
+    image: sanitizeStr(req.body.image, 300),
+    category: sanitizeStr(req.body.category, 50) || 'عام'
+  };
+  settings.products.push(newProduct);
+  saveSettings(settings);
+  res.json({ success: true, product: newProduct });
+});
+app.put('/api/products/:id', protect, (req, res) => {
+  const settings = loadSettings();
+  const idx = settings.products.findIndex(p => p.id == req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'المنتج غير موجود' });
+  const cleaned = sanitizeObj(req.body, { name: 100, description: 500, image: 300, category: 50 });
+  settings.products[idx] = { ...settings.products[idx], ...cleaned, id: settings.products[idx].id };
+  saveSettings(settings);
+  res.json({ success: true, product: settings.products[idx] });
+});
+app.delete('/api/products/:id', protect, (req, res) => {
+  const settings = loadSettings();
+  const prod = settings.products.find(p => p.id == req.params.id);
+  if (prod) deleteUploadedFile(prod.image);
+  settings.products = settings.products.filter(p => p.id != req.params.id);
+  saveSettings(settings);
+  res.json({ success: true });
+});
+
+// SERVICES
+app.post('/api/services', protect, (req, res) => {
+  const settings = loadSettings();
+  const newService = {
+    id: Date.now(),
+    title: sanitizeStr(req.body.title, 100) || 'خدمة جديدة',
+    icon: sanitizeStr(req.body.icon, 10) || '⭐',
+    desc: sanitizeStr(req.body.desc, 300)
+  };
+  settings.services.push(newService);
+  saveSettings(settings);
+  res.json({ success: true, service: newService });
+});
+app.put('/api/services/:id', protect, (req, res) => {
+  const settings = loadSettings();
+  const idx = settings.services.findIndex(s => s.id == req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'الخدمة غير موجودة' });
+  const cleaned = sanitizeObj(req.body, { title: 100, icon: 10, desc: 300 });
+  settings.services[idx] = { ...settings.services[idx], ...cleaned, id: settings.services[idx].id };
+  saveSettings(settings);
+  res.json({ success: true });
+});
+app.delete('/api/services/:id', protect, (req, res) => {
+  const settings = loadSettings();
+  settings.services = settings.services.filter(s => s.id != req.params.id);
+  saveSettings(settings);
+  res.json({ success: true });
+});
+
+// ORDERS
+app.get('/api/orders', requireAuth, (req, res) => res.json(loadOrders()));
+app.get('/api/orders/:id', requireAuth, (req, res) => {
   const o = loadOrders().find(o => o.id == req.params.id);
   o ? res.json(o) : res.status(404).json({ error: 'غير موجود' });
 });
-
-app.post('/api/orders', (req, res) => {
+app.post('/api/orders', protect, (req, res) => {
   const orders = loadOrders();
   const order = {
     id: Date.now(),
@@ -246,8 +363,7 @@ app.post('/api/orders', (req, res) => {
   saveOrders(orders);
   res.json({ success: true, order });
 });
-
-app.put('/api/orders/:id', (req, res) => {
+app.put('/api/orders/:id', protect, (req, res) => {
   const orders = loadOrders();
   const idx = orders.findIndex(o => o.id == req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'غير موجود' });
@@ -255,19 +371,29 @@ app.put('/api/orders/:id', (req, res) => {
   saveOrders(orders);
   res.json({ success: true, order: orders[idx] });
 });
-
-app.delete('/api/orders/:id', (req, res) => {
+app.delete('/api/orders/:id', protect, (req, res) => {
   saveOrders(loadOrders().filter(o => o.id != req.params.id));
   res.json({ success: true });
 });
 
 // ============ PAGES ============
-
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
-app.get('/contract/:id', (req, res) => res.sendFile(path.join(__dirname, 'public', 'contract.html')));
+app.get('/contract/:id', requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public', 'contract.html')));
+
+// Generic error handler
+app.use((err, req, res, next) => {
+  console.error('Error:', err.message);
+  res.status(err.status || 500).json({ error: err.message || 'خطأ داخلي' });
+});
 
 app.listen(PORT, () => {
   console.log(`\n✅ السيرفر شغال على: http://localhost:${PORT}`);
-  console.log(`🔧 لوحة التحكم: http://localhost:${PORT}/admin\n`);
+  console.log(`🔧 لوحة التحكم: http://localhost:${PORT}/admin`);
+  console.log(`📁 DATA_DIR: ${DATA_DIR}`);
+  console.log(`📷 UPLOADS_DIR: ${UPLOADS_DIR}`);
+  if (ADMIN_PASSWORD === 'admin123') {
+    console.log(`\n⚠️  تحذير: استخدم متغير البيئة ADMIN_PASSWORD لتغيير كلمة السر الافتراضية`);
+  }
+  console.log('');
 });
