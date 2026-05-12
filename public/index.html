@@ -617,17 +617,9 @@
     }
     .mq-svc:hover .marquee-track { animation-play-state: paused; }
 
-    /* Products carousel — JS-driven scroll */
-    .mq-prod {
-      overflow-x: scroll !important;
-      cursor: grab;
-      scroll-behavior: auto;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-    }
-    .mq-prod::-webkit-scrollbar { display: none; }
-    .mq-prod.is-dragging { cursor: grabbing; }
-    .mq-prod .marquee-track { animation: none !important; }
+    /* Products carousel — drag + lightbox */
+    .mq-prod { cursor: grab; }
+    .mq-prod.is-dragging { cursor: grabbing; user-select: none; }
     .mqprd-card img.product-image {
       cursor: zoom-in;
       transition: transform 0.25s;
@@ -1163,9 +1155,9 @@
     });
 
     // Force reflow then re-apply animation with duration scaled to content
-    // Speed: ~80px/sec → duration in seconds = trackWidth / 80
+    // Speed: ~35px/sec (slow) → duration in seconds = trackWidth / 35
     const trackPxWidth = repeats * oneSetWidth;
-    const duration = Math.max(20, Math.round(trackPxWidth / 80));
+    const duration = Math.max(20, Math.round(trackPxWidth / 35));
     void wrapper.offsetHeight;
     tracks.forEach(t => {
       t.style.animation = 'marquee-scroll ' + duration + 's linear infinite';
@@ -1223,8 +1215,7 @@
       </div>`).join('');
 
     fillTracks('products-marquee', 'products', html, products.length, PRD_CARD_W);
-    // Start JS-driven scroll + drag after tracks are filled
-    setTimeout(() => { if (window._setupProductCarousel) window._setupProductCarousel(); }, 50);
+    setTimeout(() => { if (window._setupProductDrag) window._setupProductDrag(); }, 50);
   }
 
   // Re-fill on resize so each track stays >= viewport width
@@ -1428,90 +1419,108 @@
 </div>
 
 <script>
-// ── Products carousel: JS scroll + drag + lightbox ──────────────────────
+// ── Products carousel: drag (CSS-animation based) + lightbox ─────────────
 (function () {
-  let _raf = null;
   let _dragging = false;
   let _dragMoved = false;
-  let _lastX = 0;
-  let _speed = 0.35; // px per frame ≈ 21 px/sec (slow & smooth)
+  let _startX = 0;
+  let _lastX  = 0;
+  let _totalDrag = 0; // accumulated px dragged (positive = dragged left)
+  let _tracks = [];
+  let _wrapper = null;
+  let _initialized = false;
 
-  function setupProductCarousel() {
-    const wrapper = document.getElementById('products-marquee');
-    if (!wrapper) return;
+  function getTranslateX(el) {
+    const m = getComputedStyle(el).transform;
+    if (!m || m === 'none') return 0;
+    return parseFloat(m.split(',')[4]) || 0;
+  }
 
-    const tracks = wrapper.querySelectorAll('[data-track="products"]');
-    if (!tracks[0] || !tracks[0].children.length) return;
+  function setupProductDrag() {
+    _wrapper = document.getElementById('products-marquee');
+    if (!_wrapper) return;
+    _tracks = Array.from(_wrapper.querySelectorAll('[data-track="products"]'));
+    if (!_tracks[0] || !_tracks[0].children.length) return;
 
-    // Cancel any previous loop
-    if (_raf) { cancelAnimationFrame(_raf); _raf = null; }
+    if (_initialized) return; // only wire events once
+    _initialized = true;
 
-    // Need track width after layout settles
-    requestAnimationFrame(() => {
-      // trackW = width of ONE track (both tracks are identical clones)
-      const trackW = tracks[0].scrollWidth + 20; // +20 for gap between tracks
-
-      function loop() {
-        if (!_dragging) {
-          wrapper.scrollLeft += _speed;
-          // Seamless wrap: jump back when we've scrolled one full clone
-          if (wrapper.scrollLeft >= trackW) wrapper.scrollLeft -= trackW;
-        }
-        _raf = requestAnimationFrame(loop);
-      }
-      _raf = requestAnimationFrame(loop);
-    });
-
-    // ── Mouse drag ──
-    wrapper.addEventListener('mousedown', e => {
-      _dragging = true;
+    function onStart(clientX) {
+      _dragging  = true;
       _dragMoved = false;
-      _lastX = e.clientX;
-      wrapper.classList.add('is-dragging');
-    });
-    window.addEventListener('mousemove', e => {
+      _startX    = clientX;
+      _lastX     = clientX;
+      _totalDrag = 0;
+      // Freeze animation at current visual position
+      _tracks.forEach(t => {
+        const x = getTranslateX(t);
+        t.style.animationPlayState = 'paused';
+        t.style.translate = '0px'; // reset any prior offset
+        t._frozenX = x;           // store paused position
+      });
+      _wrapper.classList.add('is-dragging');
+    }
+
+    function onMove(clientX) {
       if (!_dragging) return;
-      const dx = _lastX - e.clientX;
-      if (Math.abs(dx) > 3) _dragMoved = true;
-      wrapper.scrollLeft += dx;
-      _lastX = e.clientX;
-    });
-    window.addEventListener('mouseup', () => {
+      const delta = clientX - _lastX;
+      _totalDrag += delta;
+      if (Math.abs(clientX - _startX) > 5) _dragMoved = true;
+      // Shift all tracks together via CSS translate (independent of animation transform)
+      _tracks.forEach(t => {
+        const cur = parseFloat(t.style.translate) || 0;
+        t.style.translate = (cur + delta) + 'px';
+      });
+      _lastX = clientX;
+    }
+
+    function onEnd() {
+      if (!_dragging) return;
       _dragging = false;
-      wrapper.classList.remove('is-dragging');
-    });
+      _wrapper.classList.remove('is-dragging');
 
-    // ── Touch drag ──
-    wrapper.addEventListener('touchstart', e => {
-      _dragging = true;
-      _dragMoved = false;
-      _lastX = e.touches[0].clientX;
-    }, { passive: true });
-    wrapper.addEventListener('touchmove', e => {
-      if (!_dragging) return;
-      const dx = _lastX - e.touches[0].clientX;
-      if (Math.abs(dx) > 5) _dragMoved = true;
-      wrapper.scrollLeft += dx;
-      _lastX = e.touches[0].clientX;
-    }, { passive: true });
-    wrapper.addEventListener('touchend', () => { _dragging = false; });
+      // Resume animation from the visual position after drag
+      _tracks.forEach(t => {
+        const dragOffset = parseFloat(t.style.translate) || 0;
+        const trackW = t.offsetWidth + 20; // one full animation cycle in px
+        const dur    = parseFloat(t.style.animationDuration) || 40;
+        // Visual X = frozen position + drag offset
+        const visualX = (t._frozenX || 0) + dragOffset;
+        // Map to animation progress (0..1), then to negative delay
+        let progress = -visualX / trackW;
+        progress = ((progress % 1) + 1) % 1; // clamp 0..1
+        const newDelay = -(progress * dur);
 
-    // ── Lightbox on image click ──
-    wrapper.addEventListener('click', e => {
-      if (_dragMoved) return; // was a drag, not a click
+        t.style.translate = '0px';
+        t.style.animationDelay = newDelay + 's';
+        t.style.animationPlayState = 'running';
+      });
+    }
+
+    // Mouse
+    _wrapper.addEventListener('mousedown',  e => onStart(e.clientX));
+    window.addEventListener('mousemove',    e => onMove(e.clientX));
+    window.addEventListener('mouseup',      onEnd);
+
+    // Touch
+    _wrapper.addEventListener('touchstart', e => onStart(e.touches[0].clientX), { passive: true });
+    _wrapper.addEventListener('touchmove',  e => { onMove(e.touches[0].clientX); }, { passive: true });
+    _wrapper.addEventListener('touchend',   onEnd);
+
+    // Lightbox on image tap/click
+    _wrapper.addEventListener('click', e => {
+      if (_dragMoved) return;
       const img = e.target.closest('.mqprd-card img.product-image');
-      if (!img) return;
-      openLightbox(img.src, img.alt);
+      if (img) openLightbox(img.src, img.alt);
     });
   }
 
-  // Call after products are rendered
-  window._setupProductCarousel = setupProductCarousel;
+  window._setupProductDrag = setupProductDrag;
 
-  // ── Lightbox ──
-  const lb     = document.getElementById('prd-lightbox');
-  const lbImg  = document.getElementById('prd-lightbox-img');
-  const lbCap  = document.getElementById('prd-lightbox-caption');
+  // ── Lightbox ──────────────────────────────────────────────────────────
+  const lb      = document.getElementById('prd-lightbox');
+  const lbImg   = document.getElementById('prd-lightbox-img');
+  const lbCap   = document.getElementById('prd-lightbox-caption');
   const lbClose = document.getElementById('prd-lightbox-close');
 
   function openLightbox(src, alt) {
