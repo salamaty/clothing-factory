@@ -615,7 +615,78 @@
       animation: marquee-scroll 40s linear infinite;
       will-change: transform;
     }
-    .marquee-wrapper:hover .marquee-track { animation-play-state: paused; }
+    .mq-svc:hover .marquee-track { animation-play-state: paused; }
+
+    /* Products carousel — JS-driven scroll */
+    .mq-prod {
+      overflow-x: scroll !important;
+      cursor: grab;
+      scroll-behavior: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .mq-prod::-webkit-scrollbar { display: none; }
+    .mq-prod.is-dragging { cursor: grabbing; }
+    .mq-prod .marquee-track { animation: none !important; }
+    .mqprd-card img.product-image {
+      cursor: zoom-in;
+      transition: transform 0.25s;
+    }
+    .mqprd-card:hover img.product-image { transform: scale(1.04); }
+
+    /* Lightbox */
+    #prd-lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0,0,0,0.88);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: lbFadeIn 0.2s ease;
+    }
+    #prd-lightbox.open { display: flex; }
+    @keyframes lbFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    #prd-lightbox img {
+      max-width: 90vw;
+      max-height: 88vh;
+      border-radius: 16px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+      object-fit: contain;
+      animation: lbZoomIn 0.25s ease;
+    }
+    @keyframes lbZoomIn { from { transform: scale(0.88); opacity:0; } to { transform: scale(1); opacity:1; } }
+    #prd-lightbox-caption {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+      white-space: nowrap;
+    }
+    #prd-lightbox-close {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      background: rgba(255,255,255,0.15);
+      border: none;
+      color: #fff;
+      font-size: 1.6rem;
+      line-height: 1;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    #prd-lightbox-close:hover { background: rgba(255,255,255,0.3); }
     @keyframes marquee-scroll {
       from { transform: translateX(0); }
       to   { transform: translateX(calc(-100% - 20px)); }
@@ -1152,6 +1223,8 @@
       </div>`).join('');
 
     fillTracks('products-marquee', 'products', html, products.length, PRD_CARD_W);
+    // Start JS-driven scroll + drag after tracks are filled
+    setTimeout(() => { if (window._setupProductCarousel) window._setupProductCarousel(); }, 50);
   }
 
   // Re-fill on resize so each track stays >= viewport width
@@ -1345,6 +1418,119 @@
     renderContact(data);
     pollForUpdates();
   });
+</script>
+
+<!-- Product Lightbox -->
+<div id="prd-lightbox" role="dialog" aria-modal="true">
+  <button id="prd-lightbox-close" aria-label="إغلاق">✕</button>
+  <img id="prd-lightbox-img" src="" alt="">
+  <div id="prd-lightbox-caption"></div>
+</div>
+
+<script>
+// ── Products carousel: JS scroll + drag + lightbox ──────────────────────
+(function () {
+  let _raf = null;
+  let _dragging = false;
+  let _dragMoved = false;
+  let _lastX = 0;
+  let _speed = 0.35; // px per frame ≈ 21 px/sec (slow & smooth)
+
+  function setupProductCarousel() {
+    const wrapper = document.getElementById('products-marquee');
+    if (!wrapper) return;
+
+    const tracks = wrapper.querySelectorAll('[data-track="products"]');
+    if (!tracks[0] || !tracks[0].children.length) return;
+
+    // Cancel any previous loop
+    if (_raf) { cancelAnimationFrame(_raf); _raf = null; }
+
+    // Need track width after layout settles
+    requestAnimationFrame(() => {
+      // trackW = width of ONE track (both tracks are identical clones)
+      const trackW = tracks[0].scrollWidth + 20; // +20 for gap between tracks
+
+      function loop() {
+        if (!_dragging) {
+          wrapper.scrollLeft += _speed;
+          // Seamless wrap: jump back when we've scrolled one full clone
+          if (wrapper.scrollLeft >= trackW) wrapper.scrollLeft -= trackW;
+        }
+        _raf = requestAnimationFrame(loop);
+      }
+      _raf = requestAnimationFrame(loop);
+    });
+
+    // ── Mouse drag ──
+    wrapper.addEventListener('mousedown', e => {
+      _dragging = true;
+      _dragMoved = false;
+      _lastX = e.clientX;
+      wrapper.classList.add('is-dragging');
+    });
+    window.addEventListener('mousemove', e => {
+      if (!_dragging) return;
+      const dx = _lastX - e.clientX;
+      if (Math.abs(dx) > 3) _dragMoved = true;
+      wrapper.scrollLeft += dx;
+      _lastX = e.clientX;
+    });
+    window.addEventListener('mouseup', () => {
+      _dragging = false;
+      wrapper.classList.remove('is-dragging');
+    });
+
+    // ── Touch drag ──
+    wrapper.addEventListener('touchstart', e => {
+      _dragging = true;
+      _dragMoved = false;
+      _lastX = e.touches[0].clientX;
+    }, { passive: true });
+    wrapper.addEventListener('touchmove', e => {
+      if (!_dragging) return;
+      const dx = _lastX - e.touches[0].clientX;
+      if (Math.abs(dx) > 5) _dragMoved = true;
+      wrapper.scrollLeft += dx;
+      _lastX = e.touches[0].clientX;
+    }, { passive: true });
+    wrapper.addEventListener('touchend', () => { _dragging = false; });
+
+    // ── Lightbox on image click ──
+    wrapper.addEventListener('click', e => {
+      if (_dragMoved) return; // was a drag, not a click
+      const img = e.target.closest('.mqprd-card img.product-image');
+      if (!img) return;
+      openLightbox(img.src, img.alt);
+    });
+  }
+
+  // Call after products are rendered
+  window._setupProductCarousel = setupProductCarousel;
+
+  // ── Lightbox ──
+  const lb     = document.getElementById('prd-lightbox');
+  const lbImg  = document.getElementById('prd-lightbox-img');
+  const lbCap  = document.getElementById('prd-lightbox-caption');
+  const lbClose = document.getElementById('prd-lightbox-close');
+
+  function openLightbox(src, alt) {
+    lbImg.src = src;
+    lbImg.alt = alt || '';
+    lbCap.textContent = alt || '';
+    lb.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox() {
+    lb.classList.remove('open');
+    lbImg.src = '';
+    document.body.style.overflow = '';
+  }
+
+  lbClose.addEventListener('click', closeLightbox);
+  lb.addEventListener('click', e => { if (e.target === lb) closeLightbox(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+})();
 </script>
 </body>
 </html>
