@@ -632,7 +632,11 @@
     }
     .mqprd-card:hover img.product-image { transform: scale(1.04); }
 
-    /* Arrow buttons */
+    /* Arrow navigation wrapper — arrows live here, NOT inside the scroll box */
+    .prd-carousel-wrap {
+      position: relative;
+      width: 100%;
+    }
     .prd-arrow {
       position: absolute;
       top: 50%;
@@ -756,7 +760,7 @@
       box-shadow: 0 16px 40px rgba(0,0,0,0.14);
     }
     .mqprd-card .product-image,
-    .mqprd-card .product-image-placeholder { height: 170px; width: 100%; object-fit: cover; }
+    .mqprd-card .product-image-placeholder { height: 310px; width: 100%; object-fit: cover; object-position: top; }
     .mqprd-card .product-image-placeholder { display: flex; align-items: center; justify-content: center; font-size: 3.5rem; background: linear-gradient(135deg,#f0f0f0,#e0e0e0); color:#ccc; }
     .mqprd-card .product-body  { padding: 14px; }
     .mqprd-card .product-category { font-size: 0.72rem; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
@@ -1464,8 +1468,14 @@
     const allTracks = wrapper.querySelectorAll('[data-track="products"]');
     for (let i = 1; i < allTracks.length; i++) allTracks[i].remove();
 
-    // Don't add arrows twice
-    if (wrapper.querySelector('.prd-arrow')) return;
+    // Don't set up twice
+    if (document.querySelector('.prd-carousel-wrap')) return;
+
+    // Wrap the scroll container so arrows sit OUTSIDE it (fixed, not scrolling)
+    const outerWrap = document.createElement('div');
+    outerWrap.className = 'prd-carousel-wrap';
+    wrapper.parentNode.insertBefore(outerWrap, wrapper);
+    outerWrap.appendChild(wrapper);
 
     const prev = document.createElement('button');
     prev.className = 'prd-arrow prd-arrow-prev';
@@ -1480,8 +1490,9 @@
     prev.addEventListener('click', () => wrapper.scrollBy({ left: -SCROLL_STEP, behavior: 'smooth' }));
     next.addEventListener('click', () => wrapper.scrollBy({ left:  SCROLL_STEP, behavior: 'smooth' }));
 
-    wrapper.appendChild(prev);
-    wrapper.appendChild(next);
+    // Arrows go into the outer wrap — they won't scroll with the carousel
+    outerWrap.appendChild(prev);
+    outerWrap.appendChild(next);
 
     // Lightbox on image click
     wrapper.addEventListener('click', e => {
