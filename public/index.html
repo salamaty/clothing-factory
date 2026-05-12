@@ -617,14 +617,47 @@
     }
     .mq-svc:hover .marquee-track { animation-play-state: paused; }
 
-    /* Products carousel — drag + lightbox */
-    .mq-prod { cursor: grab; }
-    .mq-prod.is-dragging { cursor: grabbing; user-select: none; }
+    /* Products carousel — static, arrow navigation */
+    .mq-prod {
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      scroll-behavior: smooth;
+    }
+    .mq-prod::-webkit-scrollbar { display: none; }
+    .mq-prod .marquee-track { animation: none !important; }
     .mqprd-card img.product-image {
       cursor: zoom-in;
       transition: transform 0.25s;
     }
     .mqprd-card:hover img.product-image { transform: scale(1.04); }
+
+    /* Arrow buttons */
+    .prd-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+      background: white;
+      border: none;
+      border-radius: 50%;
+      width: 46px;
+      height: 46px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+      cursor: pointer;
+      color: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    }
+    .prd-arrow:hover {
+      background: var(--accent, #e74c3c);
+      color: white;
+      box-shadow: 0 6px 24px rgba(231,76,60,0.35);
+    }
+    .prd-arrow-prev { left: 12px; }
+    .prd-arrow-next { right: 12px; }
 
     /* Lightbox */
     #prd-lightbox {
@@ -1215,7 +1248,7 @@
       </div>`).join('');
 
     fillTracks('products-marquee', 'products', html, products.length, PRD_CARD_W);
-    setTimeout(() => { if (window._setupProductDrag) window._setupProductDrag(); }, 50);
+    setTimeout(() => { if (window._setupProductArrows) window._setupProductArrows(); }, 50);
   }
 
   // Re-fill on resize so each track stays >= viewport width
@@ -1419,103 +1452,45 @@
 </div>
 
 <script>
-// ── Products carousel: drag (CSS-animation based) + lightbox ─────────────
+// ── Products carousel: arrow navigation + lightbox ───────────────────────
 (function () {
-  let _dragging = false;
-  let _dragMoved = false;
-  let _startX = 0;
-  let _lastX  = 0;
-  let _totalDrag = 0; // accumulated px dragged (positive = dragged left)
-  let _tracks = [];
-  let _wrapper = null;
-  let _initialized = false;
+  const SCROLL_STEP = 520; // ~2 cards at a time
 
-  function getTranslateX(el) {
-    const m = getComputedStyle(el).transform;
-    if (!m || m === 'none') return 0;
-    return parseFloat(m.split(',')[4]) || 0;
-  }
+  function setupProductArrows() {
+    const wrapper = document.getElementById('products-marquee');
+    if (!wrapper) return;
 
-  function setupProductDrag() {
-    _wrapper = document.getElementById('products-marquee');
-    if (!_wrapper) return;
-    _tracks = Array.from(_wrapper.querySelectorAll('[data-track="products"]'));
-    if (!_tracks[0] || !_tracks[0].children.length) return;
+    // Keep only the first track (no infinite-loop duplicate needed)
+    const allTracks = wrapper.querySelectorAll('[data-track="products"]');
+    for (let i = 1; i < allTracks.length; i++) allTracks[i].remove();
 
-    if (_initialized) return; // only wire events once
-    _initialized = true;
+    // Don't add arrows twice
+    if (wrapper.querySelector('.prd-arrow')) return;
 
-    function onStart(clientX) {
-      _dragging  = true;
-      _dragMoved = false;
-      _startX    = clientX;
-      _lastX     = clientX;
-      _totalDrag = 0;
-      // Freeze animation at current visual position
-      _tracks.forEach(t => {
-        const x = getTranslateX(t);
-        t.style.animationPlayState = 'paused';
-        t.style.translate = '0px'; // reset any prior offset
-        t._frozenX = x;           // store paused position
-      });
-      _wrapper.classList.add('is-dragging');
-    }
+    const prev = document.createElement('button');
+    prev.className = 'prd-arrow prd-arrow-prev';
+    prev.setAttribute('aria-label', 'السابق');
+    prev.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
 
-    function onMove(clientX) {
-      if (!_dragging) return;
-      const delta = clientX - _lastX;
-      _totalDrag += delta;
-      if (Math.abs(clientX - _startX) > 5) _dragMoved = true;
-      // Shift all tracks together via CSS translate (independent of animation transform)
-      _tracks.forEach(t => {
-        const cur = parseFloat(t.style.translate) || 0;
-        t.style.translate = (cur + delta) + 'px';
-      });
-      _lastX = clientX;
-    }
+    const next = document.createElement('button');
+    next.className = 'prd-arrow prd-arrow-next';
+    next.setAttribute('aria-label', 'التالي');
+    next.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
 
-    function onEnd() {
-      if (!_dragging) return;
-      _dragging = false;
-      _wrapper.classList.remove('is-dragging');
+    prev.addEventListener('click', () => wrapper.scrollBy({ left: -SCROLL_STEP, behavior: 'smooth' }));
+    next.addEventListener('click', () => wrapper.scrollBy({ left:  SCROLL_STEP, behavior: 'smooth' }));
 
-      // Resume animation from the visual position after drag
-      _tracks.forEach(t => {
-        const dragOffset = parseFloat(t.style.translate) || 0;
-        const trackW = t.offsetWidth + 20; // one full animation cycle in px
-        const dur    = parseFloat(t.style.animationDuration) || 40;
-        // Visual X = frozen position + drag offset
-        const visualX = (t._frozenX || 0) + dragOffset;
-        // Map to animation progress (0..1), then to negative delay
-        let progress = -visualX / trackW;
-        progress = ((progress % 1) + 1) % 1; // clamp 0..1
-        const newDelay = -(progress * dur);
+    wrapper.appendChild(prev);
+    wrapper.appendChild(next);
 
-        t.style.translate = '0px';
-        t.style.animationDelay = newDelay + 's';
-        t.style.animationPlayState = 'running';
-      });
-    }
-
-    // Mouse
-    _wrapper.addEventListener('mousedown',  e => onStart(e.clientX));
-    window.addEventListener('mousemove',    e => onMove(e.clientX));
-    window.addEventListener('mouseup',      onEnd);
-
-    // Touch
-    _wrapper.addEventListener('touchstart', e => onStart(e.touches[0].clientX), { passive: true });
-    _wrapper.addEventListener('touchmove',  e => { onMove(e.touches[0].clientX); }, { passive: true });
-    _wrapper.addEventListener('touchend',   onEnd);
-
-    // Lightbox on image tap/click
-    _wrapper.addEventListener('click', e => {
-      if (_dragMoved) return;
+    // Lightbox on image click
+    wrapper.addEventListener('click', e => {
       const img = e.target.closest('.mqprd-card img.product-image');
       if (img) openLightbox(img.src, img.alt);
     });
   }
 
-  window._setupProductDrag = setupProductDrag;
+  window._setupProductArrows = setupProductArrows;
 
   // ── Lightbox ──────────────────────────────────────────────────────────
   const lb      = document.getElementById('prd-lightbox');
