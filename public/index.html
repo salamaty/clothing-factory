@@ -617,6 +617,9 @@
     }
     .mq-svc:hover .marquee-track { animation-play-state: paused; }
 
+    /* Remove edge-fade gradients — not needed with arrow navigation */
+    .mq-prod::before, .mq-prod::after { display: none; }
+
     /* Products carousel — static, arrow navigation */
     .mq-prod {
       overflow-x: auto;
