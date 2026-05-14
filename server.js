@@ -75,7 +75,7 @@ app.use((req, res, next) => {
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(UPLOADS_DIR));
 
 const writeLimiter = rateLimit({
@@ -293,15 +293,8 @@ function nextContractNumber(orders) {
 }
 
 // ============ MULTER ============
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOADS_DIR),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase().slice(0, 8);
-    cb(null, Date.now() + '-' + crypto.randomBytes(4).toString('hex') + ext);
-  }
-});
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const ok = /^image\/(jpeg|jpg|png|gif|webp|svg\+xml)$/i.test(file.mimetype);
@@ -309,10 +302,35 @@ const upload = multer({
   }
 });
 
-function deleteUploadedFile(urlPath) {
-  if (!urlPath || !urlPath.startsWith('/uploads/')) return;
-  const file = path.join(UPLOADS_DIR, path.basename(urlPath));
-  if (fs.existsSync(file)) { try { fs.unlinkSync(file); } catch (e) {} }
+async function saveImage(file) {
+  if (useDB) {
+    const { Binary } = require('mongodb');
+    const result = await mongo.collection('images').insertOne({
+      filename: file.originalname,
+      mimetype: file.mimetype,
+      data: new Binary(file.buffer),
+      uploadedAt: new Date()
+    });
+    return `/api/image/${result.insertedId}`;
+  }
+  ensureDirs();
+  const ext = path.extname(file.originalname).toLowerCase().slice(0, 8);
+  const filename = Date.now() + '-' + crypto.randomBytes(4).toString('hex') + ext;
+  fs.writeFileSync(path.join(UPLOADS_DIR, filename), file.buffer);
+  return `/uploads/${filename}`;
+}
+
+async function deleteImage(urlPath) {
+  if (!urlPath) return;
+  if (urlPath.startsWith('/api/image/') && useDB) {
+    try {
+      const { ObjectId } = require('mongodb');
+      await mongo.collection('images').deleteOne({ _id: new ObjectId(urlPath.replace('/api/image/', '')) });
+    } catch (e) {}
+  } else if (urlPath.startsWith('/uploads/')) {
+    const file = path.join(UPLOADS_DIR, path.basename(urlPath));
+    try { if (fs.existsSync(file)) fs.unlinkSync(file); } catch (e) {}
+  }
 }
 
 // ============ AUTH ROUTES ============
@@ -366,6 +384,18 @@ app.get('/api/me', (req, res) => {
 });
 
 // ============ PUBLIC API ============
+app.get('/api/image/:id', async (req, res) => {
+  if (!useDB) return res.status(404).end();
+  try {
+    const { ObjectId } = require('mongodb');
+    const img = await mongo.collection('images').findOne({ _id: new ObjectId(req.params.id) });
+    if (!img) return res.status(404).end();
+    res.set('Content-Type', img.mimetype);
+    res.set('Cache-Control', 'public, max-age=31536000');
+    res.send(img.data.buffer);
+  } catch (e) { res.status(404).end(); }
+});
+
 app.get('/api/version', async (req, res) => {
   try { res.json({ lastUpdated: (await loadSettings()).lastUpdated || 0 }); }
   catch (e) { res.status(500).json({ error: 'خطأ داخلي' }); }
@@ -407,16 +437,18 @@ app.post('/api/upload-logo', protect, upload.single('logo'), async (req, res) =>
   try {
     if (!req.file) return res.status(400).json({ error: 'لم يتم رفع أي ملف' });
     const settings = await loadSettings();
-    deleteUploadedFile(settings.logoUrl);
-    settings.logoUrl = `/uploads/${req.file.filename}`;
+    await deleteImage(settings.logoUrl);
+    settings.logoUrl = await saveImage(req.file);
     await saveSettings(settings);
     res.json({ success: true, logoUrl: settings.logoUrl });
   } catch (e) { res.status(500).json({ error: 'خطأ داخلي' }); }
 });
 
-app.post('/api/upload-product-image', protect, upload.single('image'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'لم يتم رفع أي ملف' });
-  res.json({ success: true, imageUrl: `/uploads/${req.file.filename}` });
+app.post('/api/upload-product-image', protect, upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'لم يتم رفع أي ملف' });
+    res.json({ success: true, imageUrl: await saveImage(req.file) });
+  } catch (e) { res.status(500).json({ error: 'خطأ داخلي' }); }
 });
 
 // PRODUCTS
